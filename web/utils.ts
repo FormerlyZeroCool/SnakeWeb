@@ -49,6 +49,19 @@ export class Queue<T> {
         this.end = 0;
         this.length = 0;
     }
+
+    push_stack(val:T):void
+    {
+        if(this.length >= this.data.length)
+        {
+            this.start++;
+            this.start %= this.data.length;
+            this.length--;
+        }
+        this.length++;
+        this.data[this.end++] = val;
+        this.end %= this.data.length;
+    }
     push(val:T):void
     {
         if(this.length === this.data.length)
@@ -99,6 +112,18 @@ export class Queue<T> {
             this.data[(index+this.start) % (this.data.length)] = obj;
         }
 		throw new Error(`Could not set value at index ${index}`);
+    }
+    indexOf(item:T, start:number = 0):number
+    {
+        if(start < this.length)
+        for(let i = start; i < this.length; i++)
+        {
+            if(this.get(i) === item)
+            {
+                return i;
+            }
+        }
+        return -1;
     }
 };
 export class FixedSizeQueue<T> {

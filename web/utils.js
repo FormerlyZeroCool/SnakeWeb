@@ -36,6 +36,16 @@ export class Queue {
         this.end = 0;
         this.length = 0;
     }
+    push_stack(val) {
+        if (this.length >= this.data.length) {
+            this.start++;
+            this.start %= this.data.length;
+            this.length--;
+        }
+        this.length++;
+        this.data[this.end++] = val;
+        this.end %= this.data.length;
+    }
     push(val) {
         if (this.length === this.data.length) {
             const newData = [];
@@ -76,6 +86,15 @@ export class Queue {
             this.data[(index + this.start) % (this.data.length)] = obj;
         }
         throw new Error(`Could not set value at index ${index}`);
+    }
+    indexOf(item, start = 0) {
+        if (start < this.length)
+            for (let i = start; i < this.length; i++) {
+                if (this.get(i) === item) {
+                    return i;
+                }
+            }
+        return -1;
     }
 }
 ;
