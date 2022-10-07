@@ -24,7 +24,7 @@ class Snake {
     init_snake():void
     {
         this.indexes = new Queue<number>();
-        for(let i = 0; i < this.initial_len; i++)
+        for(let i = this.initial_len - 1; i >= 0; i--)
         {
             const index = this.head_pos + i;
             this.indexes.push(index);
@@ -209,6 +209,10 @@ class Game extends SquareAABBCollidable {
             {
                 this.snake.move(this);
             }
+        }
+        if(this.snake.self_collision())
+        {
+            this.restart_game();
         }
     }
     move_up():boolean
