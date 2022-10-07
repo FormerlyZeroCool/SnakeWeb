@@ -213,7 +213,6 @@ class Game extends SquareAABBCollidable {
         if (dt > 1000 / this.updates_per_second) {
             this.last_update = Date.now();
             const runs = Math.floor(dt / (1000 / this.updates_per_second));
-            console.log(runs);
             if (runs < 2000)
                 for (let i = 0; i < runs; i++) {
                     this.update_count++;
