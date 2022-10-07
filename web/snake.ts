@@ -75,6 +75,8 @@ class Snake {
     {
         if(food.index === this.head_pos)
         {
+            this.game.score++;
+            this.game.updates_per_second += this.game.score % 2;
             while(this.indexes.indexOf(food.index) !== -1)
                 food.index = Math.floor(this.game.screen_buf.width * this.game.screen_buf.height * random());
             
@@ -125,7 +127,7 @@ class Game extends SquareAABBCollidable {
     {
         super(x, y, width, height);
         this.last_update = 0;
-        this.updates_per_second = 30;
+        this.updates_per_second = 7;
         this.score = 0;
         this.update_count = 0;
         this.starting_lives = starting_lives;
