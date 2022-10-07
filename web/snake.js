@@ -317,6 +317,21 @@ async function main() {
     let game = new Game(3, 0, 0, height, width);
     window.game = game;
     let low_fps = false;
+    touchListener.registerCallBack("touchmove", (event) => true, (event) => {
+        game.ai = false;
+        if (Math.abs(event.deltaX) < Math.abs(event.deltaY)) {
+            if (event.deltaY < 0)
+                game.move_up();
+            else
+                game.move_down();
+        }
+        else {
+            if (event.deltaX > 0)
+                game.move_right();
+            else
+                game.move_left();
+        }
+    });
     //setInterval(() => {for(let i = 0; i < 200; i++) game.add_ball(); game.balls.forEach(ball => ball.release());}, 50)
     keyboardHandler.registerCallBack("keydown", () => true, (event) => {
         switch (event.code) {
