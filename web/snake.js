@@ -164,7 +164,7 @@ class Game extends SquareAABBCollidable {
     calc_weight(origin, current) {
         let weight = this.cost_map[origin] + 1 + this.cell_dist(current, this.food.index);
         const y = Math.floor(current / this.screen_buf.width);
-        weight += +(y === this.screen_buf.height || y === 0) * 200;
+        weight += +((y === this.screen_buf.height || y === 0) && current != this.food.index) * 200;
         return weight;
     }
     update_map() {
@@ -322,6 +322,8 @@ async function main() {
         switch (event.code) {
             case ("KeyA"):
                 game.ai = !game.ai;
+            case ("KeyL"):
+                low_fps = !low_fps;
                 break;
             case ("ArrowUp"):
                 game.move_up();
