@@ -139,7 +139,7 @@ class Game extends SquareAABBCollidable {
     {
         super(x, y, width, height);
         this.last_update = 0;
-        this.updates_per_second = 27;
+        this.updates_per_second = 8;
         this.score = 0;
         this.update_count = 0;
         this.starting_lives = starting_lives;
@@ -174,7 +174,7 @@ class Game extends SquareAABBCollidable {
     }
     restart_game():void
     {
-        this.updates_per_second = 37;
+        this.updates_per_second = 8;
         this.init(this.width, this.height, this.screen_buf.width, this.screen_buf.height);
     }
     init(width:number, height:number, cell_width:number, cell_height:number):void
