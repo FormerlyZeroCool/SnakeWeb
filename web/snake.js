@@ -103,7 +103,6 @@ class Game extends SquareAABBCollidable {
         this.starting_lives = starting_lives;
         const whratio = width / height;
         const rough_dim = 90;
-        this.ai = true;
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
     }
     add_snake_piece(index) {
@@ -132,6 +131,7 @@ class Game extends SquareAABBCollidable {
     init(width, height, cell_width, cell_height) {
         this.resize(width, height);
         this.lives = this.starting_lives;
+        this.ai = true;
         this.background_color = new RGB(0, 0, 0, 255);
         this.heat_map = new Int32Array(cell_height * cell_width).fill(0, 0, cell_height * cell_width);
         this.cost_map = new Int32Array(cell_height * cell_width).fill(0, 0, cell_height * cell_width);
