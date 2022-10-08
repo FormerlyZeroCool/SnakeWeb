@@ -88,12 +88,12 @@ class Game extends SquareAABBCollidable {
     constructor(starting_lives, x, y, width, height) {
         super(x, y, width, height);
         this.last_update = 0;
-        this.updates_per_second = 7;
+        this.updates_per_second = 17;
         this.score = 0;
         this.update_count = 0;
         this.starting_lives = starting_lives;
         const whratio = width / height;
-        const rough_dim = 40;
+        const rough_dim = 60;
         this.ai = true;
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
     }
@@ -117,7 +117,7 @@ class Game extends SquareAABBCollidable {
         return false;
     }
     restart_game() {
-        this.updates_per_second = 7;
+        this.updates_per_second = 17;
         this.init(this.width, this.height, this.screen_buf.width, this.screen_buf.height);
     }
     init(width, height, cell_width, cell_height) {
@@ -167,7 +167,7 @@ class Game extends SquareAABBCollidable {
     calc_weight(origin, current) {
         let weight = this.cost_map[origin] + 1 + this.cell_dist(current, this.food.index);
         const y = Math.floor(current / this.screen_buf.width);
-        weight += +((y === this.screen_buf.height || y === 0) && current != this.food.index) * 200;
+        weight += +((y === this.screen_buf.height - 1 || y === 0) && current !== this.food.index) * 200;
         return weight;
     }
     update_map() {
