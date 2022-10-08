@@ -65,7 +65,7 @@ class Snake {
     try_eat(food) {
         if (food.index === this.head_pos) {
             this.game.score++;
-            this.game.updates_per_second += 0.2;
+            this.game.updates_per_second += this.game.ai ? 2 : 0.2;
             while (this.indexes.indexOf(food.index) !== -1)
                 food.index = Math.floor(this.game.screen_buf.width * this.game.screen_buf.height * random());
             this.game.add_place(food.index, food.color.color);
