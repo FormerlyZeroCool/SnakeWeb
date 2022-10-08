@@ -1,6 +1,6 @@
 import { SingleTouchListener, isTouchSupported, KeyboardHandler } from './io.js';
 import { getHeight, getWidth, RGB, Sprite } from './gui.js';
-import { random, srand, max_32_bit_signed, FixedSizeQueue, Queue } from './utils.js';
+import { random, srand, max_32_bit_signed, FixedSizeQueue, Queue, PriorityQueue } from './utils.js';
 import { menu_font_size, SquareAABBCollidable } from './game_utils.js';
 class Snake {
     constructor(game, initial_len, head_pos) {
@@ -51,6 +51,14 @@ class Snake {
             const new_piece_index = this.head_pos - game.screen_buf.width;
             this.indexes.push(new_piece_index);
         }
+        const screen_len = this.game.screen_buf.width * this.game.screen_buf.height;
+        let new_index = this.indexes.get(this.indexes.length - 1);
+        if (new_index < 0 && this.indexes.length) {
+            this.indexes.set(this.indexes.length - 1, screen_len - new_index);
+        }
+        else if (new_index > screen_len && this.indexes.length) {
+            this.indexes.set(this.indexes.length - 1, -screen_len + new_index);
+        }
         this.head_pos = this.indexes.get(this.indexes.length - 1);
         game.add_snake_piece(this.head_pos);
     }
@@ -62,17 +70,18 @@ class Snake {
                 food.index = Math.floor(this.game.screen_buf.width * this.game.screen_buf.height * random());
             this.game.add_place(food.index, food.color.color);
             if (this.indexes.indexOf(this.indexes.get(0) + 1) === -1) {
-                this.indexes.push(this.indexes.get(0) + 1);
+                this.indexes.push_front(this.indexes.get(0) + 1);
             }
             else if (this.indexes.indexOf(this.indexes.get(0) - 1) === -1) {
-                this.indexes.push(this.indexes.get(0) - 1);
+                this.indexes.push_front(this.indexes.get(0) - 1);
             }
             else if (this.indexes.indexOf(this.indexes.get(0) + this.game.screen_buf.width) === -1) {
-                this.indexes.push(this.indexes.get(0) + this.game.screen_buf.width);
+                this.indexes.push_front(this.indexes.get(0) + this.game.screen_buf.width);
             }
             else if (this.indexes.indexOf(this.indexes.get(0) - this.game.screen_buf.width) === -1) {
-                this.indexes.push(this.indexes.get(0) - this.game.screen_buf.width);
+                this.indexes.push_front(this.indexes.get(0) - this.game.screen_buf.width);
             }
+            this.game.add_snake_piece(this.indexes.get(this.indexes.length - 1));
         }
     }
 }
@@ -88,12 +97,12 @@ class Game extends SquareAABBCollidable {
     constructor(starting_lives, x, y, width, height) {
         super(x, y, width, height);
         this.last_update = 0;
-        this.updates_per_second = 17;
+        this.updates_per_second = 27;
         this.score = 0;
         this.update_count = 0;
         this.starting_lives = starting_lives;
         const whratio = width / height;
-        const rough_dim = 60;
+        const rough_dim = 90;
         this.ai = true;
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
     }
@@ -117,7 +126,7 @@ class Game extends SquareAABBCollidable {
         return false;
     }
     restart_game() {
-        this.updates_per_second = 17;
+        this.updates_per_second = 37;
         this.init(this.width, this.height, this.screen_buf.width, this.screen_buf.height);
     }
     init(width, height, cell_width, cell_height) {
@@ -126,11 +135,12 @@ class Game extends SquareAABBCollidable {
         this.background_color = new RGB(0, 0, 0, 255);
         this.heat_map = new Int32Array(cell_height * cell_width).fill(0, 0, cell_height * cell_width);
         this.cost_map = new Int32Array(cell_height * cell_width).fill(0, 0, cell_height * cell_width);
+        this.path_map = new Int32Array(cell_height * cell_width).fill(0, 0, cell_height * cell_width);
         const pixels = (new Array(cell_height * cell_width)).fill(this.background_color, 0, cell_height * cell_width);
         this.screen_buf = new Sprite(pixels, cell_width, cell_height, false);
         this.food = new Food(Math.floor(this.screen_buf.width * this.screen_buf.height * random()), new RGB(255, 0, 0, 255));
         this.add_place(this.food.index, this.food.color.color);
-        this.snake = new Snake(this, 10, Math.floor(cell_width / 2) + Math.floor(cell_height / 2) * cell_width);
+        this.snake = new Snake(this, 20, Math.floor(cell_width / 2) + Math.floor(cell_height / 2) * cell_width);
         this.snake.init_snake();
     }
     resize(width, height) {
@@ -165,50 +175,69 @@ class Game extends SquareAABBCollidable {
         return view[cell] == this.snake.color.color;
     }
     calc_weight(origin, current) {
-        let weight = this.cost_map[origin] + 1 + this.cell_dist(current, this.food.index);
-        const y = Math.floor(current / this.screen_buf.width);
-        weight += +((y === this.screen_buf.height - 1 || y === 0) && current !== this.food.index) * 200;
+        let weight = this.cost_map[origin] + 1 + this.cell_dist(current, this.snake.head_pos) + this.cell_dist(current, this.snake.indexes.get(0));
+        weight += +(this.is_snake_here(current)) * 50;
+        //const y = Math.floor(current / this.screen_buf.width);
+        //weight += +((y === this.screen_buf.height - 1 || y === 0) && current !== this.food.index) * 200;
         return weight;
     }
     update_map() {
-        const view = new Int32Array(this.screen_buf.imageData.data);
-        const queue = new Queue();
-        queue.push(this.snake.head_pos);
+        const view = new Int32Array(this.screen_buf.imageData.data.buffer);
+        const queue = new PriorityQueue((a, b) => {
+            return this.cost_map[a] - this.cost_map[b];
+        });
+        queue.push(this.food.index);
         this.cost_map.fill(0, 0, this.cost_map.length);
         let max_cost = 0;
         const blender1 = new RGB(0, 0, 0);
-        while (queue.length > 0) {
+        let snake_parts_found = 0;
+        let head_found = false;
+        while (queue.data.length > 0) {
             const cell = queue.pop();
-            if (!this.is_snake_here(cell) || cell == this.snake.head_pos) {
+            if (view[cell] == this.background_color.color || view[cell] == this.food.color.color) {
                 if (this.cost_map[cell] > max_cost) {
                     max_cost = this.cost_map[cell];
                 }
                 if (this.cost_map[cell + 1] === 0 && view[cell + 1] !== undefined) {
                     this.cost_map[cell + 1] = this.calc_weight(cell, cell + 1);
+                    this.path_map[cell + 1] = cell;
                     queue.push(cell + 1);
                 }
                 if (this.cost_map[cell - 1] === 0 && view[cell - 1] !== undefined) {
                     this.cost_map[cell - 1] = this.calc_weight(cell, cell - 1);
+                    this.path_map[cell - 1] = cell;
                     queue.push(cell - 1);
                 }
                 if (this.cost_map[cell + this.screen_buf.width] === 0 && view[cell + this.screen_buf.width] !== undefined) {
                     this.cost_map[cell + this.screen_buf.width] = this.calc_weight(cell, cell + this.screen_buf.width);
+                    this.path_map[cell + this.screen_buf.width] = cell;
                     queue.push(cell + this.screen_buf.width);
                 }
                 if (this.cost_map[cell - this.screen_buf.width] === 0 && view[cell - this.screen_buf.width] !== undefined) {
                     this.cost_map[cell - this.screen_buf.width] = this.calc_weight(cell, cell - this.screen_buf.width);
+                    this.path_map[cell - this.screen_buf.width] = cell;
                     queue.push(cell - this.screen_buf.width);
                 }
             }
             else {
-                this.cost_map[cell] = 1000000;
+                this.cost_map[cell] = 10000000;
+                if (this.is_snake_here(cell)) {
+                    snake_parts_found++;
+                    if (this.snake.head_pos == cell) {
+                        head_found = true;
+                    }
+                }
+                if (head_found)
+                    queue.clear();
             }
         }
         const color = new RGB(0, 0, 0, 255);
         for (let i = 0; i < this.cost_map.length; i++) {
+            const bias = this.cost_map[i] == 0 ? 255 : 0;
             const clamped_cost = this.cost_map[i] / max_cost * 255;
-            const blender2 = new RGB(clamped_cost, 255 - clamped_cost, clamped_cost, 74);
-            this.heat_map[i] = blender2.color;
+            const blender2 = new RGB(clamped_cost, 255 - clamped_cost, Math.abs(clamped_cost - bias), 74);
+            if (i !== this.food.index)
+                this.heat_map[i] = blender2.color;
         }
     }
     update_state(delta_time) {
@@ -216,28 +245,44 @@ class Game extends SquareAABBCollidable {
         if (dt > 1000 / this.updates_per_second) {
             this.last_update = Date.now();
             const runs = Math.floor(dt / (1000 / this.updates_per_second));
-            if (runs < 2000)
+            if (runs < 20)
                 for (let i = 0; i < runs; i++) {
                     this.update_count++;
-                    if (this.update_count % 1 === 0) {
-                        this.update_map();
-                        if (this.ai) {
-                            const min_weight = Math.min(this.cost_map[this.snake.head_pos + 1], // + this.snake.indexes.indexOf(this.snake.head_pos + 1) > -1 ? 5000:0,
-                            this.cost_map[this.snake.head_pos - 1], // + this.snake.indexes.indexOf(this.snake.head_pos - 1) > -1 ? 5000:0,
-                            this.cost_map[this.snake.head_pos + this.screen_buf.width], // + this.snake.indexes.indexOf(this.snake.head_pos + this.screen_buf.width) > -1 ? 5000:0,
-                            this.cost_map[this.snake.head_pos - this.screen_buf.width]);
-                            if (min_weight === this.cost_map[this.snake.head_pos + 1])
-                                this.move_right();
-                            else if (min_weight === this.cost_map[this.snake.head_pos - 1])
-                                this.move_left();
-                            else if (min_weight === this.cost_map[this.snake.head_pos + this.screen_buf.width])
-                                this.move_down();
-                            else if (min_weight === this.cost_map[this.snake.head_pos - this.screen_buf.width])
-                                this.move_up();
-                            else {
-                                this.move_random();
-                            }
+                    //if(this.update_count % 3 === 0)
+                    this.update_map();
+                    if (this.ai) {
+                        const to_cell = this.path_map[this.snake.head_pos];
+                        if (to_cell === this.snake.head_pos + 1)
+                            this.move_right();
+                        else if (to_cell === this.snake.head_pos - 1)
+                            this.move_left();
+                        else if (to_cell === this.snake.head_pos + this.screen_buf.width)
+                            this.move_down();
+                        else if (to_cell === this.snake.head_pos - this.screen_buf.width)
+                            this.move_up();
+                        else {
+                            this.move_random();
                         }
+                        //this.cost_map[this.snake.head_pos] = 0;
+                        /*const min_weight = Math.min(
+                            this.calc_weight(this.snake.head_pos, this.snake.head_pos + 1),// + this.snake.indexes.indexOf(this.snake.head_pos + 1) > -1 ? 5000:0,
+                            this.calc_weight(this.snake.head_pos, this.snake.head_pos - 1),// + this.snake.indexes.indexOf(this.snake.head_pos - 1) > -1 ? 5000:0,
+                            this.calc_weight(this.snake.head_pos, this.snake.head_pos + this.screen_buf.width),// + this.snake.indexes.indexOf(this.snake.head_pos + this.screen_buf.width) > -1 ? 5000:0,
+                            this.calc_weight(this.snake.head_pos, this.snake.head_pos - this.screen_buf.width),// + this.snake.indexes.indexOf(this.snake.head_pos - this.screen_buf.width) > -1 ? 5000:0
+                        );
+    
+                        if(min_weight === this.calc_weight(this.snake.head_pos, this.snake.head_pos + 1))
+                            this.move_right();
+                        else if(min_weight === this.calc_weight(this.snake.head_pos, this.snake.head_pos - 1))
+                            this.move_left()
+                        else if(min_weight === this.calc_weight(this.snake.head_pos, this.snake.head_pos + this.screen_buf.width))
+                            this.move_down();
+                        else if(min_weight === this.calc_weight(this.snake.head_pos, this.snake.head_pos - this.screen_buf.width))
+                            this.move_up();
+                        else
+                        {
+                           this.move_random();
+                        }*/
                     }
                     if (this.snake.self_collision()) {
                         this.restart_game();

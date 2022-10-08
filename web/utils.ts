@@ -36,6 +36,78 @@ export function matByVec(mat:number[], vec:number[]):number[]
             mat[3]*vec[0]+mat[4]*vec[1]+mat[5]*vec[2],
             mat[6]*vec[0]+mat[7]*vec[1]+mat[8]*vec[2]];
 }
+function left(index:number):number
+{
+    return 2 * index + 1;
+}
+function right(index:number):number
+{
+    return 2 * (index + 1);
+}
+function parent(index:number):number
+{
+    return (index - 2) >> 1;
+}
+export class PriorityQueue<T> {
+    data:T[];
+    comparator:(a:T, b:T) => number;
+    constructor(comparator:(a:T, b:T) => number)
+    {
+        this.data = [];
+        this.comparator = comparator;
+    }
+
+    bubble_up(end:number):void
+    {
+        while(end > 0 && this.comparator(this.data[end], this.data[parent(end)]) < 0)
+        {
+            const temp = this.data[parent(end)];
+            this.data[parent(end)] = this.data[end];
+            this.data[end] = temp;
+            end = parent(end);
+        }
+    }
+    size():number
+    {
+        return this.data.length;
+    }
+    bubble_down():void
+    {
+        let index = 0;
+        
+        while(
+            (left(index) < this.size() && this.comparator(this.data[left(index)], this.data[index]) < 0) ||
+            (right(index) < this.size() && this.comparator(this.data[right(index)], this.data[index]) < 0)
+            )
+        {
+            const lesser_child = this.comparator(this.data[left(index)], this.data[right(index)]) < 0 || right(index) > this.size() ? left(index) : right(index);
+            const temp = this.data[lesser_child];
+            this.data[lesser_child] = this.data[index];
+            this.data[index] = temp;
+            index = lesser_child;
+        }
+    }
+    push(element:T):void
+    {
+        this.data.push(element);
+        this.bubble_up(this.data.length - 1);
+    }
+    pop():T
+    {
+        const value = this.data[0];
+        const last = this.data.splice(this.data.length - 1, 1)[0];
+        if(this.data.length)
+        {
+            this.data[0] = last;
+            this.bubble_down();
+        }
+        return value;
+    }
+    clear():void
+    {
+        this.data = [];
+    }
+};
 export class Queue<T> {
     data:T[];
     start:number;
@@ -48,19 +120,6 @@ export class Queue<T> {
         this.start = 0;
         this.end = 0;
         this.length = 0;
-    }
-
-    push_stack(val:T):void
-    {
-        if(this.length >= this.data.length)
-        {
-            this.start++;
-            this.start %= this.data.length;
-            this.length--;
-        }
-        this.length++;
-        this.data[this.end++] = val;
-        this.end %= this.data.length;
     }
     push(val:T):void
     {
@@ -84,6 +143,19 @@ export class Queue<T> {
             this.end %= this.data.length;
             this.length++;
         }
+    }
+    push_front(val:T):void
+    {
+        const queue = new Queue<T>();
+        queue.push(val);
+        for(let i = 0; this.length; i++)
+        {
+            queue.push(this.pop());
+        }
+        this.data = queue.data;
+        this.start = queue.start;
+        this.end = queue.end;
+        this.length = queue.length;
     }
     pop():T
     {
@@ -110,8 +182,14 @@ export class Queue<T> {
         if(index < this.length)
         {
             this.data[(index+this.start) % (this.data.length)] = obj;
+            return;
         }
 		throw new Error(`Could not set value at index ${index}`);
+    }
+    clear():void
+    {
+        this.length = 0;
+        this.end = this.start;
     }
     indexOf(item:T, start:number = 0):number
     {

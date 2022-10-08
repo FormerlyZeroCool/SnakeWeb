@@ -28,6 +28,60 @@ export function matByVec(mat, vec) {
         mat[3] * vec[0] + mat[4] * vec[1] + mat[5] * vec[2],
         mat[6] * vec[0] + mat[7] * vec[1] + mat[8] * vec[2]];
 }
+function left(index) {
+    return 2 * index + 1;
+}
+function right(index) {
+    return 2 * (index + 1);
+}
+function parent(index) {
+    return (index - 2) >> 1;
+}
+export class PriorityQueue {
+    constructor(comparator) {
+        this.data = [];
+        this.comparator = comparator;
+    }
+    bubble_up(end) {
+        while (end > 0 && this.comparator(this.data[end], this.data[parent(end)]) < 0) {
+            const temp = this.data[parent(end)];
+            this.data[parent(end)] = this.data[end];
+            this.data[end] = temp;
+            end = parent(end);
+        }
+    }
+    size() {
+        return this.data.length;
+    }
+    bubble_down() {
+        let index = 0;
+        while ((left(index) < this.size() && this.comparator(this.data[left(index)], this.data[index]) < 0) ||
+            (right(index) < this.size() && this.comparator(this.data[right(index)], this.data[index]) < 0)) {
+            const lesser_child = this.comparator(this.data[left(index)], this.data[right(index)]) < 0 || right(index) > this.size() ? left(index) : right(index);
+            const temp = this.data[lesser_child];
+            this.data[lesser_child] = this.data[index];
+            this.data[index] = temp;
+            index = lesser_child;
+        }
+    }
+    push(element) {
+        this.data.push(element);
+        this.bubble_up(this.data.length - 1);
+    }
+    pop() {
+        const value = this.data[0];
+        const last = this.data.splice(this.data.length - 1, 1)[0];
+        if (this.data.length) {
+            this.data[0] = last;
+            this.bubble_down();
+        }
+        return value;
+    }
+    clear() {
+        this.data = [];
+    }
+}
+;
 export class Queue {
     constructor() {
         this.data = [];
@@ -35,16 +89,6 @@ export class Queue {
         this.start = 0;
         this.end = 0;
         this.length = 0;
-    }
-    push_stack(val) {
-        if (this.length >= this.data.length) {
-            this.start++;
-            this.start %= this.data.length;
-            this.length--;
-        }
-        this.length++;
-        this.data[this.end++] = val;
-        this.end %= this.data.length;
     }
     push(val) {
         if (this.length === this.data.length) {
@@ -65,6 +109,17 @@ export class Queue {
             this.length++;
         }
     }
+    push_front(val) {
+        const queue = new Queue();
+        queue.push(val);
+        for (let i = 0; this.length; i++) {
+            queue.push(this.pop());
+        }
+        this.data = queue.data;
+        this.start = queue.start;
+        this.end = queue.end;
+        this.length = queue.length;
+    }
     pop() {
         if (this.length) {
             const val = this.data[this.start];
@@ -84,8 +139,13 @@ export class Queue {
     set(index, obj) {
         if (index < this.length) {
             this.data[(index + this.start) % (this.data.length)] = obj;
+            return;
         }
         throw new Error(`Could not set value at index ${index}`);
+    }
+    clear() {
+        this.length = 0;
+        this.end = this.start;
     }
     indexOf(item, start = 0) {
         if (start < this.length)
