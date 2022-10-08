@@ -237,10 +237,10 @@ class Game extends SquareAABBCollidable {
                             else {
                                 this.move_random();
                             }
-                            if (this.snake.self_collision()) {
-                                this.restart_game();
-                            }
                         }
+                    }
+                    if (this.snake.self_collision()) {
+                        this.restart_game();
                     }
                     this.snake.move(this);
                     this.snake.try_eat(this.food);
