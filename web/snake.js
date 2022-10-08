@@ -97,7 +97,7 @@ class Game extends SquareAABBCollidable {
     constructor(starting_lives, x, y, width, height) {
         super(x, y, width, height);
         this.last_update = 0;
-        this.updates_per_second = 8;
+        this.updates_per_second = 160;
         this.score = 0;
         this.update_count = 0;
         this.starting_lives = starting_lives;
@@ -361,7 +361,9 @@ async function main() {
     });
     //setInterval(() => {for(let i = 0; i < 200; i++) game.add_ball(); game.balls.forEach(ball => ball.release());}, 50)
     keyboardHandler.registerCallBack("keydown", () => true, (event) => {
-        event.preventDefault();
+        if (!keyboardHandler.keysHeld["MetaLeft"] && !keyboardHandler.keysHeld["ControlLeft"] &&
+            !keyboardHandler.keysHeld["MetaRight"] && !keyboardHandler.keysHeld["ControlRight"])
+            event.preventDefault();
         switch (event.code) {
             case ("KeyA"):
                 game.ai = !game.ai;
