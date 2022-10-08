@@ -102,7 +102,7 @@ class Game extends SquareAABBCollidable {
         this.update_count = 0;
         this.starting_lives = starting_lives;
         const whratio = width / height;
-        const rough_dim = 90;
+        const rough_dim = 200;
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
     }
     add_snake_piece(index) {
@@ -175,7 +175,7 @@ class Game extends SquareAABBCollidable {
         return view[cell] == this.snake.color.color;
     }
     calc_weight(origin, current) {
-        let weight = this.cost_map[origin] + 1 + this.cell_dist(current, this.snake.head_pos) + this.cell_dist(current, this.snake.indexes.get(0));
+        let weight = this.cost_map[origin] + 1 + this.cell_dist(current, this.snake.head_pos) * 2;
         weight += +(this.is_snake_here(current)) * 50;
         //const y = Math.floor(current / this.screen_buf.width);
         //weight += +((y === this.screen_buf.height - 1 || y === 0) && current !== this.food.index) * 200;
