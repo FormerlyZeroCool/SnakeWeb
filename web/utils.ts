@@ -95,8 +95,8 @@ export class PriorityQueue<T> {
     pop():T
     {
         const value = this.data[0];
-        const last = this.data.splice(this.data.length - 1, 1)[0];
-        if(this.data.length)
+        const last = this.data.pop();
+        if(last)
         {
             this.data[0] = last;
             this.bubble_down();
@@ -105,7 +105,7 @@ export class PriorityQueue<T> {
     }
     clear():void
     {
-        this.data = [];
+        this.data.length = 0;
     }
 };
 export class Queue<T> {
