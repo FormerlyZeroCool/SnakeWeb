@@ -189,7 +189,6 @@ class Game extends SquareAABBCollidable {
         queue.push(this.food.index);
         this.cost_map.fill(0, 0, this.cost_map.length);
         let max_cost = 0;
-        const blender1 = new RGB(0, 0, 0);
         let snake_parts_found = 0;
         let head_found = false;
         while (queue.data.length > 0) {
@@ -263,26 +262,6 @@ class Game extends SquareAABBCollidable {
                         else {
                             this.move_random();
                         }
-                        //this.cost_map[this.snake.head_pos] = 0;
-                        /*const min_weight = Math.min(
-                            this.calc_weight(this.snake.head_pos, this.snake.head_pos + 1),// + this.snake.indexes.indexOf(this.snake.head_pos + 1) > -1 ? 5000:0,
-                            this.calc_weight(this.snake.head_pos, this.snake.head_pos - 1),// + this.snake.indexes.indexOf(this.snake.head_pos - 1) > -1 ? 5000:0,
-                            this.calc_weight(this.snake.head_pos, this.snake.head_pos + this.screen_buf.width),// + this.snake.indexes.indexOf(this.snake.head_pos + this.screen_buf.width) > -1 ? 5000:0,
-                            this.calc_weight(this.snake.head_pos, this.snake.head_pos - this.screen_buf.width),// + this.snake.indexes.indexOf(this.snake.head_pos - this.screen_buf.width) > -1 ? 5000:0
-                        );
-    
-                        if(min_weight === this.calc_weight(this.snake.head_pos, this.snake.head_pos + 1))
-                            this.move_right();
-                        else if(min_weight === this.calc_weight(this.snake.head_pos, this.snake.head_pos - 1))
-                            this.move_left()
-                        else if(min_weight === this.calc_weight(this.snake.head_pos, this.snake.head_pos + this.screen_buf.width))
-                            this.move_down();
-                        else if(min_weight === this.calc_weight(this.snake.head_pos, this.snake.head_pos - this.screen_buf.width))
-                            this.move_up();
-                        else
-                        {
-                           this.move_random();
-                        }*/
                     }
                     if (this.snake.self_collision()) {
                         this.restart_game();
@@ -382,9 +361,11 @@ async function main() {
     });
     //setInterval(() => {for(let i = 0; i < 200; i++) game.add_ball(); game.balls.forEach(ball => ball.release());}, 50)
     keyboardHandler.registerCallBack("keydown", () => true, (event) => {
+        event.preventDefault();
         switch (event.code) {
             case ("KeyA"):
                 game.ai = !game.ai;
+                break;
             case ("KeyL"):
                 low_fps = !low_fps;
                 break;
