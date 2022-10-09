@@ -87,10 +87,6 @@ class Snake {
         {
             this.game.score++;
             this.game.updates_per_second += this.game.ai ? 2 : 0.2;
-            while(this.indexes.indexOf(food.index) !== -1)
-                food.index = Math.floor(this.game.screen_buf.width * this.game.screen_buf.height * random());
-            
-            this.game.add_place(food.index, food.color.color);
             if(this.indexes.indexOf(this.indexes.get(0) + 1) === -1)
             {
                 this.indexes.push_front(this.indexes.get(0) + 1);
@@ -108,6 +104,12 @@ class Snake {
                 this.indexes.push_front(this.indexes.get(0) - this.game.screen_buf.width);
             }
             this.game.add_snake_piece(this.indexes.get(this.indexes.length - 1));
+            while(this.indexes.indexOf(food.index) !== -1)
+            {
+                food.index = Math.floor(this.game.screen_buf.width * this.game.screen_buf.height * Math.random());
+            }
+            
+            this.game.add_place(food.index, food.color.color);
         }
     }
 };
@@ -135,16 +137,18 @@ class Game extends SquareAABBCollidable {
     background_color:RGB;
     update_count:number;
     ai:boolean;
+    initial_updates_per_second:number;
     constructor(starting_lives:number, x:number, y:number, width:number, height:number)
     {
         super(x, y, width, height);
         this.last_update = 0;
-        this.updates_per_second = 60;
+        this.initial_updates_per_second = 160;
+        this.updates_per_second = this.initial_updates_per_second;
         this.score = 0;
         this.update_count = 0;
         this.starting_lives = starting_lives;
         const whratio = width / height;
-        const rough_dim = 100;
+        const rough_dim = 500;
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
     }
     add_snake_piece(index:number):boolean
@@ -173,7 +177,7 @@ class Game extends SquareAABBCollidable {
     }
     restart_game():void
     {
-        this.updates_per_second = 8;
+        this.updates_per_second = this.initial_updates_per_second;
         this.init(this.width, this.height, this.screen_buf.width, this.screen_buf.height);
     }
     init(width:number, height:number, cell_width:number, cell_height:number):void
@@ -230,10 +234,8 @@ class Game extends SquareAABBCollidable {
     }
     calc_weight(origin:number, current:number):number
     {
-        let weight = this.cost_map[origin] + 2 + this.cell_dist(current, this.snake.head_pos) * 16;
-        weight += +(this.is_snake_here(current)) * 50;
-        //const y = Math.floor(current / this.screen_buf.width);
-        //weight += +((y === this.screen_buf.height - 1 || y === 0) && current !== this.food.index) * 200;
+        let weight = this.cost_map[origin] + 1 + this.cell_dist(current, this.snake.head_pos);
+        weight += +(this.is_snake_here(current) && current !== this.snake.head_pos) * 50;
         return weight;
     }
     column(cell):number
@@ -244,14 +246,15 @@ class Game extends SquareAABBCollidable {
     {
         return Math.floor(cell / this.screen_buf.width);
     }
-    update_map():void
+    update_map(start:number = this.food.index):void
     {
         const view = new Int32Array(this.screen_buf.imageData!.data.buffer);
         const queue:PriorityQueue<number> = new PriorityQueue<number>((a:number, b:number) => {
             return this.cost_map[a] - this.cost_map[b];
         });
-        queue.push(this.food.index);
+        queue.push(start);
         this.cost_map.fill(0, 0, this.cost_map.length);
+        this.heat_map.fill(0, 0, this.heat_map.length);
         let max_cost = 0;
         let snake_parts_found = 0;
         let head_found = false;
@@ -297,11 +300,9 @@ class Game extends SquareAABBCollidable {
                     snake_parts_found++;
                     if(this.snake.head_pos == cell)
                     {
-                        head_found = true;
+                        queue.clear();
                     }
                 }
-                if(head_found)
-                    queue.clear();
             }
         }
         const color = new RGB(0, 0, 0, 255);
@@ -322,12 +323,10 @@ class Game extends SquareAABBCollidable {
         {
             this.last_update = Date.now();
             const runs = Math.floor(dt / (1000 / this.updates_per_second));
-            if(runs < 2)
+            if(runs < 200)
             for(let i = 0; i < runs; i++)
             {
                 this.update_count++;
-                //if(this.update_count % 3 === 0)
-                this.update_map();
                 
                 if(this.ai)
                 {
@@ -342,16 +341,17 @@ class Game extends SquareAABBCollidable {
                         this.move_up();
                     else
                     {
-                       this.move_random();
+                       //this.move_random();
                     }
                 }
                 if(this.snake.self_collision())
                 {
                     this.restart_game();
                 }
-                this.snake.move(this);
                 this.snake.try_eat(this.food);
+                this.snake.move(this);
             }
+            this.update_map();
         }
     }
     move_random(depth:number = 0):void

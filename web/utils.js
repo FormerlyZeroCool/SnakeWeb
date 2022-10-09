@@ -71,7 +71,7 @@ export class PriorityQueue {
     pop() {
         const value = this.data[0];
         const last = this.data.pop();
-        if (last) {
+        if (this.data.length) {
             this.data[0] = last;
             this.bubble_down();
         }
@@ -145,6 +145,7 @@ export class Queue {
     }
     clear() {
         this.length = 0;
+        this.start = 0;
         this.end = this.start;
     }
     indexOf(item, start = 0) {

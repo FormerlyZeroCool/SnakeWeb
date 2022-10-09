@@ -96,9 +96,9 @@ export class PriorityQueue<T> {
     {
         const value = this.data[0];
         const last = this.data.pop();
-        if(last)
+        if(this.data.length)
         {
-            this.data[0] = last;
+            this.data[0] = last!;
             this.bubble_down();
         }
         return value;
@@ -189,6 +189,7 @@ export class Queue<T> {
     clear():void
     {
         this.length = 0;
+        this.start = 0;
         this.end = this.start;
     }
     indexOf(item:T, start:number = 0):number
