@@ -242,8 +242,8 @@ class Game extends SquareAABBCollidable {
         const color = new RGB(0, 0, 0, 255);
         for (let i = 0; i < this.cost_map.length; i++) {
             const bias = this.cost_map[i] == 0 ? 125 : 0;
-            const clamped_cost = this.cost_map[i] / max_cost * 255;
-            const blender2 = new RGB(clamped_cost, bias === 0 ? 255 - clamped_cost : 0, Math.abs(clamped_cost - bias), 200);
+            const clamped_cost = this.cost_map[i] / max_cost * 150;
+            const blender2 = new RGB(clamped_cost, bias === 0 ? 150 - clamped_cost : 0, Math.abs(clamped_cost - bias), 200);
             if (i !== this.food.index)
                 this.heat_map[i] = blender2.color;
         }
