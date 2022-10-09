@@ -151,7 +151,7 @@ class Game extends SquareAABBCollidable {
         this.update_count = 0;
         this.starting_lives = starting_lives;
         const whratio = width / (height > 0 ? height : width);
-        const rough_dim = 150;
+        const rough_dim = 500;
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.restart_game()
     }
@@ -241,8 +241,8 @@ class Game extends SquareAABBCollidable {
     calc_weight(origin:number, current:number):number
     {
         const cdist = this.cell_dist(current, this.snake.head_pos);
-        let weight = this.cost_map[origin] + 1 + cdist + (cdist > this.cost_map[origin]?1:0);
-        weight += +(this.is_snake_here(current) && current !== this.snake.head_pos) * 50;
+        let weight = cdist + (cdist > this.cost_map[origin]?1:0);//this.cost_map[origin] + 1 + cdist + (cdist > this.cost_map[origin]?1:0);
+        weight += +(this.is_snake_here(current) && current !== this.snake.head_pos) * 5;
         return weight;
     }
     column(cell):number
@@ -261,7 +261,7 @@ class Game extends SquareAABBCollidable {
         });
         queue.push(start);
         this.cost_map.fill(0, 0, this.cost_map.length);
-        let max_cost = 0;
+        let max_cost = 1;
         let snake_parts_found = 0;
         let head_found = false;
         while(queue.data.length > 0)
