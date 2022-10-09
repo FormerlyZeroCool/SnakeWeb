@@ -174,6 +174,7 @@ class Game extends SquareAABBCollidable {
         const c1y = Math.floor(cell1 / this.screen_buf.width);
         const c2x = cell2 % this.screen_buf.width;
         const c2y = Math.floor(cell2 / this.screen_buf.width);
+        return (Math.abs(c1x - c2x) + Math.abs(c1y - c2y));
         return Math.sqrt(Math.pow(c1x - c2x, 2) + Math.pow(c1y - c2y, 2));
     }
     is_snake_here(cell) {
