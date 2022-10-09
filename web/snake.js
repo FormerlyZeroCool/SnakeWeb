@@ -98,13 +98,13 @@ class Game extends SquareAABBCollidable {
     constructor(starting_lives, x, y, width, height) {
         super(x, y, width, height);
         this.last_update = 0;
-        this.initial_updates_per_second = 160;
+        this.initial_updates_per_second = 12;
         this.updates_per_second = this.initial_updates_per_second;
         this.score = 0;
         this.update_count = 0;
         this.starting_lives = starting_lives;
         const whratio = width / height;
-        const rough_dim = 500;
+        const rough_dim = 100;
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
     }
     add_snake_piece(index) {
@@ -249,7 +249,7 @@ class Game extends SquareAABBCollidable {
         if (dt > 1000 / this.updates_per_second) {
             this.last_update = Date.now();
             const runs = Math.floor(dt / (1000 / this.updates_per_second));
-            if (runs < 200)
+            if (runs < 1000)
                 for (let i = 0; i < runs; i++) {
                     this.update_count++;
                     if (this.ai) {
