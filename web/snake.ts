@@ -151,7 +151,7 @@ class Game extends SquareAABBCollidable {
         this.update_count = 0;
         this.starting_lives = starting_lives;
         const whratio = width / (height > 0 ? height : width);
-        const rough_dim = 100;
+        const rough_dim = 150;
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.restart_game()
     }
@@ -212,7 +212,7 @@ class Game extends SquareAABBCollidable {
         const view = new Uint32Array(buf.imageData!.data.buffer);
         const blender1:RGB = new RGB(0, 0, 0);
         const blender2:RGB = new RGB(0, 0, 0);
-        //if(this.gen_heat_map)
+        if(this.gen_heat_map)
             for(let i = 0; i < view.length; i++)
             {
                 blender1.color = view[i];
@@ -223,7 +223,7 @@ class Game extends SquareAABBCollidable {
         
         buf.refreshImage();
         ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(buf.image, x, y, canvas.width, canvas.height);
+        ctx.drawImage(buf.image, x, y, width, height);
     }
     cell_dist(cell1:number, cell2:number):number
     {
@@ -231,7 +231,7 @@ class Game extends SquareAABBCollidable {
         const c1y = Math.floor(cell1 / this.screen_buf.width);
         const c2x = cell2 % this.screen_buf.width;
         const c2y = Math.floor(cell2 / this.screen_buf.width);
-        return (Math.abs(c1x - c2x) + Math.abs(c1y - c2y));
+        return Math.sqrt(Math.pow(c1x - c2x, 2) + Math.pow(c1y - c2y, 2));
     }
     is_snake_here(cell:number):boolean
     {
@@ -240,7 +240,8 @@ class Game extends SquareAABBCollidable {
     }
     calc_weight(origin:number, current:number):number
     {
-        let weight = this.cost_map[origin] + .01 + this.cell_dist(current, this.snake.head_pos);
+        const cdist = this.cell_dist(current, this.snake.head_pos);
+        let weight = this.cost_map[origin] + 1 + cdist + (cdist > this.cost_map[origin]?1:0);
         weight += +(this.is_snake_here(current) && current !== this.snake.head_pos) * 50;
         return weight;
     }
@@ -315,7 +316,7 @@ class Game extends SquareAABBCollidable {
         {
             const bias = this.cost_map[i] == 0 ? 125 : 0;
             const clamped_cost = this.cost_map[i] / max_cost * 255;
-            const blender2 = new RGB(clamped_cost, bias === 0 ? 255 - clamped_cost : 0, Math.abs(clamped_cost - bias), 255);
+            const blender2 = new RGB(clamped_cost, bias === 0 ? 255 - clamped_cost : 0, Math.abs(clamped_cost - bias), 200);
             if(i !== this.food.index)
                 this.heat_map[i] = blender2.color;
         }
