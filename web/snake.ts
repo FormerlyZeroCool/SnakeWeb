@@ -151,7 +151,7 @@ class Game extends SquareAABBCollidable {
         this.update_count = 0;
         this.starting_lives = starting_lives;
         const whratio = width / (height > 0 ? height : width);
-        const rough_dim = 500;
+        const rough_dim = 100;
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.restart_game()
     }
