@@ -106,13 +106,13 @@ class Game extends SquareAABBCollidable {
         this.last_update = 0;
         this.gen_heat_map = true;
         this.ai = true;
-        this.initial_updates_per_second = 120;
+        this.initial_updates_per_second = 16;
         this.updates_per_second = this.initial_updates_per_second;
         this.score = 0;
         this.update_count = 0;
         this.starting_lives = starting_lives;
         const whratio = width / (height > 0 ? height : width);
-        const rough_dim = 300;
+        const rough_dim = 100;
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.restart_game();
     }
@@ -164,13 +164,22 @@ class Game extends SquareAABBCollidable {
         const view = new Uint32Array(buf.imageData.data.buffer);
         const blender1 = new RGB(0, 0, 0);
         const blender2 = new RGB(0, 0, 0);
-        if (this.gen_heat_map)
+        if (this.gen_heat_map) {
             for (let i = 0; i < view.length; i++) {
                 blender1.color = view[i];
                 blender2.color = this.heat_map[i];
                 blender2.blendAlphaCopy(blender1);
                 view[i] = blender2.color;
             }
+            let current = this.snake.head_pos;
+            let iterations = 0;
+            const max_it = Math.max(this.screen_buf.width, this.screen_buf.height) * 2;
+            while (current !== this.food.index && iterations < max_it) {
+                view[current] = this.background_color.color;
+                current = this.path_map[current];
+                iterations++;
+            }
+        }
         buf.refreshImage();
         ctx.imageSmoothingEnabled = false;
         ctx.drawImage(buf.image, x, y, width, height);
@@ -180,7 +189,7 @@ class Game extends SquareAABBCollidable {
         const c1y = Math.floor(cell1 / this.screen_buf.width);
         const c2x = cell2 % this.screen_buf.width;
         const c2y = Math.floor(cell2 / this.screen_buf.width);
-        //return (Math.abs(c1x - c2x) + Math.abs(c1y - c2y));
+        return (Math.abs(c1x - c2x) + Math.abs(c1y - c2y));
         return Math.sqrt(Math.pow(c1x - c2x, 2) + Math.pow(c1y - c2y, 2));
     }
     is_snake_here(cell) {
@@ -188,9 +197,9 @@ class Game extends SquareAABBCollidable {
         return view[cell] == this.snake.color.color;
     }
     calc_weight(origin, current) {
-        const cdist = this.cell_dist(current, this.snake.head_pos);
-        let weight = cdist + this.cell_dist(current, this.food.index); //this.cost_map[origin] + 1 + cdist + (cdist > this.cost_map[origin]?1:0);
-        //weight += +(this.is_snake_here(current) && current !== this.snake.head_pos) * 5;
+        //const cdist = this.cell_dist(current, this.snake.head_pos);
+        let weight = this.cost_map[origin] + 1; //cdist + this.cell_dist(current, this.food.index);//this.cost_map[origin] + 1 + cdist + (cdist > this.cost_map[origin]?1:0);
+        weight += +(this.is_snake_here(current) && current !== this.snake.head_pos) * 5;
         return weight;
     }
     column(cell) {
