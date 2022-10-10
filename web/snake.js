@@ -79,11 +79,11 @@ class Snake {
                 this.indexes.push_front(this.indexes.get(0) - this.game.screen_buf.width);
             }
             this.game.add_snake_piece(this.indexes.get(this.indexes.length - 1));
-            while (this.indexes.indexOf(food.index) !== -1) {
-                food.index = Math.floor(this.game.screen_buf.width * this.game.screen_buf.height * Math.random());
-            }
-            this.game.add_place(food.index, food.color.color);
+            this.game.food.reposition(this.game);
         }
+    }
+    tail() {
+        return this.indexes.get(0);
     }
 }
 ;
@@ -91,6 +91,12 @@ class Food {
     constructor(index, color) {
         this.index = index;
         this.color = color;
+    }
+    reposition(game) {
+        while (game.snake.indexes.indexOf(game.food.index) !== -1) {
+            game.food.index = Math.floor(game.snake.game.screen_buf.width * game.snake.game.screen_buf.height * Math.random());
+        }
+        game.snake.game.add_place(game.food.index, game.food.color.color);
     }
 }
 ;
@@ -100,13 +106,13 @@ class Game extends SquareAABBCollidable {
         this.last_update = 0;
         this.gen_heat_map = true;
         this.ai = true;
-        this.initial_updates_per_second = 12;
+        this.initial_updates_per_second = 120;
         this.updates_per_second = this.initial_updates_per_second;
         this.score = 0;
         this.update_count = 0;
         this.starting_lives = starting_lives;
         const whratio = width / (height > 0 ? height : width);
-        const rough_dim = 100;
+        const rough_dim = 300;
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.restart_game();
     }
@@ -144,9 +150,9 @@ class Game extends SquareAABBCollidable {
         const pixels = (new Array(cell_height * cell_width)).fill(this.background_color, 0, cell_height * cell_width);
         this.screen_buf = new Sprite(pixels, cell_width, cell_height, false);
         this.food = new Food(Math.floor(this.screen_buf.width * this.screen_buf.height * random()), new RGB(255, 0, 0, 255));
-        this.add_place(this.food.index, this.food.color.color);
         this.snake = new Snake(this, 20, Math.floor(cell_width / 2) + Math.floor(cell_height / 2) * cell_width);
         this.snake.init_snake();
+        this.food.reposition(this);
     }
     resize(width, height) {
         this.width = width;
@@ -174,7 +180,7 @@ class Game extends SquareAABBCollidable {
         const c1y = Math.floor(cell1 / this.screen_buf.width);
         const c2x = cell2 % this.screen_buf.width;
         const c2y = Math.floor(cell2 / this.screen_buf.width);
-        return (Math.abs(c1x - c2x) + Math.abs(c1y - c2y));
+        //return (Math.abs(c1x - c2x) + Math.abs(c1y - c2y));
         return Math.sqrt(Math.pow(c1x - c2x, 2) + Math.pow(c1y - c2y, 2));
     }
     is_snake_here(cell) {
@@ -183,8 +189,8 @@ class Game extends SquareAABBCollidable {
     }
     calc_weight(origin, current) {
         const cdist = this.cell_dist(current, this.snake.head_pos);
-        let weight = cdist + (cdist > this.cost_map[origin] ? 1 : 0); //this.cost_map[origin] + 1 + cdist + (cdist > this.cost_map[origin]?1:0);
-        weight += +(this.is_snake_here(current) && current !== this.snake.head_pos) * 5;
+        let weight = cdist + this.cell_dist(current, this.food.index); //this.cost_map[origin] + 1 + cdist + (cdist > this.cost_map[origin]?1:0);
+        //weight += +(this.is_snake_here(current) && current !== this.snake.head_pos) * 5;
         return weight;
     }
     column(cell) {
@@ -203,8 +209,9 @@ class Game extends SquareAABBCollidable {
         let max_cost = 1;
         let snake_parts_found = 0;
         let head_found = false;
-        while (queue.data.length > 0) {
-            const cell = queue.pop();
+        let cell = 0;
+        while (queue.data.length > 0 && cell !== undefined) {
+            cell = queue.pop();
             if (view[cell] == this.background_color.color || view[cell] == this.food.color.color) {
                 if (this.cost_map[cell] > max_cost) {
                     max_cost = this.cost_map[cell];
@@ -277,9 +284,9 @@ class Game extends SquareAABBCollidable {
                     this.snake.try_eat(this.food);
                     this.snake.move(this);
                 }
+                if (this.gen_heat_map)
+                    this.update_map();
             }
-            if (this.gen_heat_map)
-                this.update_map();
         }
     }
     move_random(depth = 0) {
@@ -378,6 +385,9 @@ async function main() {
         switch (event.code) {
             case ("KeyA"):
                 game.ai = !game.ai;
+                break;
+            case ("KeyG"):
+                game.gen_heat_map = !game.gen_heat_map;
                 break;
             case ("KeyL"):
                 low_fps = !low_fps;
