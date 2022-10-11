@@ -9,7 +9,7 @@ class Snake {
     }
     init(initial_len, head_pos) {
         this.direction = [-1, 0];
-        this.color = new RGB(120, 255, 120, 255);
+        this.color = new RGB(190, 255, 40, 255);
         this.initial_len = initial_len;
         this.head_pos = head_pos;
     }
@@ -112,7 +112,7 @@ class Game extends SquareAABBCollidable {
         this.update_count = 0;
         this.starting_lives = starting_lives;
         const whratio = width / (height > 0 ? height : width);
-        const rough_dim = window.rough_dim ? window.rough_dim : 100;
+        const rough_dim = window.rough_dim ? window.rough_dim : 50;
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.restart_game();
     }
@@ -172,9 +172,12 @@ class Game extends SquareAABBCollidable {
                 current = this.path_map[current];
                 iterations++;
             }
-            buf.refreshImage();
-            ctx.drawImage(buf.image, x, y, width, height);
         }
+        else {
+            view.fill(new RGB(25, 0, 255, 160).color, 0, view.length);
+        }
+        buf.refreshImage();
+        ctx.drawImage(buf.image, x, y, width, height);
         this.screen_buf.refreshImage();
         ctx.drawImage(this.screen_buf.image, x, y, width, height);
     }
