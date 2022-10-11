@@ -140,7 +140,7 @@ class Game extends SquareAABBCollidable {
     score:number;
     last_update:number;
     updates_per_second:number;
-    heat_map:Int32Array;
+    heat_map:Sprite;
     cost_map:Int32Array;
     path_map:Int32Array;
     background_color:RGB;
@@ -154,13 +154,13 @@ class Game extends SquareAABBCollidable {
         this.last_update = 0;
         this.gen_heat_map = true;
         this.ai = true;
-        this.initial_updates_per_second = 17;
+        this.initial_updates_per_second = window.rough_dim ? 300 : 17;
         this.updates_per_second = this.initial_updates_per_second;
         this.score = 0;
         this.update_count = 0;
         this.starting_lives = starting_lives;
         const whratio = width / (height > 0 ? height : width);
-        const rough_dim = 120;
+        const rough_dim = window.rough_dim ? window.rough_dim : 100;
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.restart_game()
     }
@@ -199,7 +199,7 @@ class Game extends SquareAABBCollidable {
         this.lives = this.starting_lives;
         this.ai = true;
         this.background_color = new RGB(0, 0, 0, 0);
-        this.heat_map = new Int32Array(cell_height * cell_width).fill(0, 0, cell_height * cell_width);
+        this.heat_map = new Sprite([], cell_width, cell_height, false);
         this.cost_map = new Int32Array(cell_height * cell_width).fill(0, 0, cell_height * cell_width);
         this.path_map = new Int32Array(cell_height * cell_width).fill(0, 0, cell_height * cell_width);
         const pixels = (new Array<RGB>(cell_height * cell_width)).fill(this.background_color, 0, cell_height * cell_width);
@@ -218,29 +218,25 @@ class Game extends SquareAABBCollidable {
     }
     draw(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void 
     {
-        const buf = new Sprite([], this.screen_buf.width, this.screen_buf.height, false);
+        const buf = this.heat_map;
         const view = new Uint32Array(buf.imageData!.data.buffer);
-        if(this.gen_heat_map){
-            for(let i = 0; i < view.length; i++)
-            {
-                view[i] = this.heat_map[i];
-            }
-            
-            let current = this.snake.head_pos;
-            let iterations = 0;
-            const max_it = Math.max(this.screen_buf.width, this.screen_buf.height) * 2;
-            while(current !== this.food.index && iterations < max_it)
-            {
-                view[current] = this.background_color.color;
-                current = this.path_map[current];
-                iterations++;
-            }
-        }
-        buf.refreshImage();
         this.screen_buf.refreshImage();
         ctx.imageSmoothingEnabled = false;
         ctx.drawImage(buf.image, x, y, width, height);
-        ctx.drawImage(this.screen_buf.image, x, y, width, height);
+        if(this.ai){
+            let current = this.snake.head_pos;
+            let iterations = 0;
+            const max_it = Math.max(this.screen_buf.width, this.screen_buf.height) * 2;
+            const black = new RGB(0, 0, 0, 255);
+            while(current !== this.food.index && iterations < max_it)
+            {
+                view[current] = black.color;
+                current = this.path_map[current];
+                iterations++;
+            }
+            buf.refreshImage();
+            ctx.drawImage(this.screen_buf.image, x, y, width, height);
+        }
     }
     cell_dist(cell1:number, cell2:number):number
     {
@@ -259,7 +255,9 @@ class Game extends SquareAABBCollidable {
     calc_weight(origin:number, current:number):number
     {
         const cdist = this.cell_dist(current, this.snake.head_pos);
-        let weight = cdist + this.cell_dist(current, this.food.index)// + this.cost_map[origin];//this.cost_map[origin] + 1 + cdist + (cdist > this.cost_map[origin]?1:0);
+        const odist = this.cell_dist(origin, this.snake.head_pos);
+        const fdist = this.cell_dist(current, this.food.index);
+        let weight = cdist + this.cell_dist(current, this.food.index)//(cdist >= odist ? 1 : 0.5)  + this.cost_map[origin]//cdist + this.cell_dist(current, this.food.index)// + this.cost_map[origin];//this.cost_map[origin] + 1 + cdist + (cdist > this.cost_map[origin]?1:0);
         //weight += +(this.is_snake_here(current) && current !== this.snake.head_pos) * 5;
         return weight;
     }
@@ -274,6 +272,7 @@ class Game extends SquareAABBCollidable {
     update_map(start:number = this.food.index):void
     {
         const view = new Int32Array(this.screen_buf.imageData!.data.buffer);
+        const heat_map = new Int32Array(this.heat_map.imageData!.data.buffer);
         const queue:PriorityQueue<number> = new PriorityQueue<number>((a:number, b:number) => {
             return this.cost_map[a] - this.cost_map[b];
         });
@@ -337,7 +336,7 @@ class Game extends SquareAABBCollidable {
             const clamped_cost = this.cost_map[i] / max_cost * 150;
             const blender2 = new RGB(clamped_cost, bias === 0 ? 150 - clamped_cost : 0, Math.abs(clamped_cost - bias), 200);
             if(i !== this.food.index)
-                this.heat_map[i] = blender2.color;
+                heat_map[i] = blender2.color;
         }
         
     }
