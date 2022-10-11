@@ -194,9 +194,9 @@ class Game extends SquareAABBCollidable {
         const cdist = this.cell_dist(current, this.snake.head_pos);
         const odist = this.cell_dist(origin, this.snake.head_pos);
         const fdist = this.cell_dist(current, this.food.index);
-        let weight = cdist + (cdist >= odist ? 1 : 0.5); //+ fdist//this.cell_dist(current, this.food.index)//(cdist >= odist ? 1 : 0.5)  + this.cost_map[origin]//cdist + this.cell_dist(current, this.food.index)// + this.cost_map[origin];//this.cost_map[origin] + 1 + cdist + (cdist > this.cost_map[origin]?1:0);
+        let weight = (cdist >= odist ? 1 : 0.5); //+ fdist//this.cell_dist(current, this.food.index)//(cdist >= odist ? 1 : 0.5)  + this.cost_map[origin]//cdist + this.cell_dist(current, this.food.index)// + this.cost_map[origin];//this.cost_map[origin] + 1 + cdist + (cdist > this.cost_map[origin]?1:0);
         //weight += +(this.is_snake_here(current) && current !== this.snake.head_pos) * 5;
-        return weight;
+        return weight + this.cost_map[origin];
     }
     column(cell) {
         return cell % this.screen_buf.width;
