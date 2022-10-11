@@ -206,7 +206,7 @@ class Game extends SquareAABBCollidable {
         this.screen_buf = new Sprite(pixels, cell_width, cell_height, false);
         
         this.food = new Food(Math.floor(this.screen_buf.width * this.screen_buf.height * random()), new RGB(255, 0, 0, 255));   
-        this.snake = new Snake(this, 20, Math.floor(cell_width / 2) + Math.floor(cell_height / 2) * cell_width);
+        this.snake = new Snake(this, 2, Math.floor(cell_width / 2) + Math.floor(cell_height / 2) * cell_width);
         this.snake.init_snake();
 
         this.food.reposition(this);
