@@ -220,7 +220,6 @@ class Game extends SquareAABBCollidable {
     {
         const buf = this.heat_map;
         const view = new Uint32Array(buf.imageData!.data.buffer);
-        this.screen_buf.refreshImage();
         ctx.imageSmoothingEnabled = false;
         if(this.ai){
             let current = this.snake.head_pos;
@@ -233,9 +232,10 @@ class Game extends SquareAABBCollidable {
                 current = this.path_map[current];
                 iterations++;
             }
+            buf.refreshImage();
             ctx.drawImage(buf.image, x, y, width, height);
         }
-        buf.refreshImage();
+        this.screen_buf.refreshImage();
         ctx.drawImage(this.screen_buf.image, x, y, width, height);
     }
     cell_dist(cell1:number, cell2:number):number
@@ -257,7 +257,7 @@ class Game extends SquareAABBCollidable {
         const cdist = this.cell_dist(current, this.snake.head_pos);
         const odist = this.cell_dist(origin, this.snake.head_pos);
         const fdist = this.cell_dist(current, this.food.index);
-        let weight = cdist + this.cell_dist(current, this.food.index)//(cdist >= odist ? 1 : 0.5)  + this.cost_map[origin]//cdist + this.cell_dist(current, this.food.index)// + this.cost_map[origin];//this.cost_map[origin] + 1 + cdist + (cdist > this.cost_map[origin]?1:0);
+        let weight = cdist + (cdist >= odist ? 1 : 0.5) //+ fdist//this.cell_dist(current, this.food.index)//(cdist >= odist ? 1 : 0.5)  + this.cost_map[origin]//cdist + this.cell_dist(current, this.food.index)// + this.cost_map[origin];//this.cost_map[origin] + 1 + cdist + (cdist > this.cost_map[origin]?1:0);
         //weight += +(this.is_snake_here(current) && current !== this.snake.head_pos) * 5;
         return weight;
     }
