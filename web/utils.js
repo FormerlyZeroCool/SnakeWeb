@@ -35,7 +35,7 @@ function right(index) {
     return 2 * (index + 1);
 }
 function parent(index) {
-    return (index - 2) >> 1;
+    return (index - 1) >> 1;
 }
 export class PriorityQueue {
     constructor(comparator) {
@@ -55,9 +55,17 @@ export class PriorityQueue {
     }
     bubble_down() {
         let index = 0;
-        while ((left(index) < this.size() && this.comparator(this.data[left(index)], this.data[index]) < 0) ||
-            (right(index) < this.size() && this.comparator(this.data[right(index)], this.data[index]) < 0)) {
-            const lesser_child = this.comparator(this.data[left(index)], this.data[right(index)]) < 0 || right(index) > this.size() ? left(index) : right(index);
+        while (left(index) < this.size() && right(index) < this.size() &&
+            (this.comparator(this.data[left(index)], this.data[index]) < 0 ||
+                this.comparator(this.data[right(index)], this.data[index]) < 0)) {
+            const lesser_child = this.comparator(this.data[left(index)], this.data[right(index)]) < 0 ? left(index) : right(index);
+            const temp = this.data[lesser_child];
+            this.data[lesser_child] = this.data[index];
+            this.data[index] = temp;
+            index = lesser_child;
+        }
+        if (left(index) < this.size() && this.comparator(this.data[left(index)], this.data[index]) < 0) {
+            const lesser_child = left(index);
             const temp = this.data[lesser_child];
             this.data[lesser_child] = this.data[index];
             this.data[index] = temp;
@@ -69,13 +77,16 @@ export class PriorityQueue {
         this.bubble_up(this.data.length - 1);
     }
     pop() {
-        const value = this.data[0];
-        const last = this.data.pop();
-        if (this.data.length) {
-            this.data[0] = last;
-            this.bubble_down();
+        if (this.size() > 0) {
+            const value = this.data[0];
+            const last = this.data.pop();
+            if (this.size()) {
+                this.data[0] = last;
+                this.bubble_down();
+            }
+            return value;
         }
-        return value;
+        return null;
     }
     clear() {
         this.data.length = 0;

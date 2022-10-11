@@ -257,9 +257,11 @@ class Game extends SquareAABBCollidable {
         const cdist = this.cell_dist(current, this.snake.head_pos);
         const odist = this.cell_dist(origin, this.snake.head_pos);
         const fdist = this.cell_dist(current, this.food.index);
-        let weight = (cdist >= odist ? 1 : 0.5) //+ fdist//this.cell_dist(current, this.food.index)//(cdist >= odist ? 1 : 0.5)  + this.cost_map[origin]//cdist + this.cell_dist(current, this.food.index)// + this.cost_map[origin];//this.cost_map[origin] + 1 + cdist + (cdist > this.cost_map[origin]?1:0);
+        const ofdist = this.cell_dist(origin, this.food.index);
+        let weight = cdist //+ fdist//this.cell_dist(current, this.food.index)//(cdist >= odist ? 1 : 0.5)  + this.cost_map[origin]
+        //cdist + this.cell_dist(current, this.food.index)// + this.cost_map[origin];//this.cost_map[origin] + 1 + cdist + (cdist > this.cost_map[origin]?1:0);
         //weight += +(this.is_snake_here(current) && current !== this.snake.head_pos) * 5;
-        return weight + this.cost_map[origin];
+        return weight //+ this.cost_map[origin];
     }
     column(cell):number
     {
@@ -284,7 +286,7 @@ class Game extends SquareAABBCollidable {
         let cell = 0;
         while(queue.data.length > 0 && cell !== undefined)
         {
-            cell = queue.pop();
+            cell = queue.pop()!;
             if(view[cell] == this.background_color.color || view[cell] == this.food.color.color)
             {
                 if(this.cost_map[cell] > max_cost)
@@ -332,9 +334,9 @@ class Game extends SquareAABBCollidable {
         const color = new RGB(0, 0, 0, 255);
         for(let i = 0; i < this.cost_map.length; i++)
         {
-            const bias = this.cost_map[i] == 0 ? 125 : 0;
-            const clamped_cost = this.cost_map[i] / max_cost * 150;
-            const blender2 = new RGB(clamped_cost, bias === 0 ? 150 - clamped_cost : 0, Math.abs(clamped_cost - bias), 200);
+            const bias = this.cost_map[i] == 0 ? 255 : 0;
+            const clamped_cost = this.cost_map[i] / max_cost * 255;
+            const blender2 = new RGB(clamped_cost, bias === 0 ? 255 - clamped_cost : 0, Math.abs(clamped_cost - bias), 160);
             if(i !== this.food.index)
                 heat_map[i] = blender2.color;
         }
@@ -532,6 +534,8 @@ async function main()
     const time_queue:FixedSizeQueue<number> = new FixedSizeQueue<number>(60 * 2);
     const header = document.getElementById("header");
     srand(Math.random() * max_32_bit_signed);
+
+
     const drawLoop = () => 
     {
         frame_count++;
