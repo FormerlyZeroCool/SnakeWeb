@@ -17,7 +17,7 @@ class Snake {
     init(initial_len:number, head_pos:number):void
     {
         this.direction = [-1, 0];
-        this.color = new RGB(255, 255, 255, 255);
+        this.color = new RGB(120, 255, 120, 255);
         this.initial_len = initial_len;
         this.head_pos = head_pos;
     }
@@ -255,13 +255,7 @@ class Game extends SquareAABBCollidable {
     calc_weight(origin:number, current:number):number
     {
         const cdist = this.cell_dist(current, this.snake.head_pos);
-        const odist = this.cell_dist(origin, this.snake.head_pos);
-        const fdist = this.cell_dist(current, this.food.index);
-        const ofdist = this.cell_dist(origin, this.food.index);
-        let weight = cdist //+ fdist//this.cell_dist(current, this.food.index)//(cdist >= odist ? 1 : 0.5)  + this.cost_map[origin]
-        //cdist + this.cell_dist(current, this.food.index)// + this.cost_map[origin];//this.cost_map[origin] + 1 + cdist + (cdist > this.cost_map[origin]?1:0);
-        //weight += +(this.is_snake_here(current) && current !== this.snake.head_pos) * 5;
-        return weight //+ this.cost_map[origin];
+        return cdist;
     }
     column(cell):number
     {
