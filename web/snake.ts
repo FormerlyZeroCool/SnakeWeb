@@ -222,7 +222,6 @@ class Game extends SquareAABBCollidable {
         const view = new Uint32Array(buf.imageData!.data.buffer);
         this.screen_buf.refreshImage();
         ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(buf.image, x, y, width, height);
         if(this.ai){
             let current = this.snake.head_pos;
             let iterations = 0;
@@ -234,9 +233,10 @@ class Game extends SquareAABBCollidable {
                 current = this.path_map[current];
                 iterations++;
             }
-            buf.refreshImage();
-            ctx.drawImage(this.screen_buf.image, x, y, width, height);
+            ctx.drawImage(buf.image, x, y, width, height);
         }
+        buf.refreshImage();
+        ctx.drawImage(this.screen_buf.image, x, y, width, height);
     }
     cell_dist(cell1:number, cell2:number):number
     {
