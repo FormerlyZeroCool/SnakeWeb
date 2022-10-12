@@ -36,6 +36,7 @@ class Snake {
     }
     move(game) {
         const removed = this.indexes.pop();
+        this.index_map.delete(removed);
         game.clear_place(removed);
         if (this.direction[0] > 0) {
             const new_piece_index = this.head_pos + 1;
@@ -55,6 +56,7 @@ class Snake {
         }
         const screen_len = this.game.screen_buf.width * this.game.screen_buf.height;
         let new_index = this.indexes.get(this.indexes.length - 1);
+        this.index_map.add(new_index);
         if (new_index < 0 && this.indexes.length) {
             this.indexes.set(this.indexes.length - 1, screen_len - new_index);
         }
@@ -83,7 +85,9 @@ class Snake {
             this.game.add_snake_piece(this.indexes.get(this.indexes.length - 1));
             this.index_map.add(this.indexes.get(this.indexes.length - 1));
             this.game.food.reposition(this.game);
+            return true;
         }
+        return false;
     }
     tail() {
         return this.indexes.get(0);
@@ -206,6 +210,12 @@ class Game extends SquareAABBCollidable {
         const max_width = Math.floor(width / 2) - 20;
         ctx.strokeText(text, 25, font_size, max_width);
         ctx.fillText(text, 25, font_size, max_width);
+        {
+            const text = `Speed updates per sec: ${Math.round(this.updates_per_second * 10) / 10}`;
+            const max_width = Math.floor(width / 2) - 20;
+            ctx.strokeText(text, 25, font_size * 2, max_width);
+            ctx.fillText(text, 25, font_size * 2, max_width);
+        }
         this.screen_buf.refreshImage();
         ctx.drawImage(this.screen_buf.image, x, y, width, height);
     }
@@ -314,8 +324,10 @@ class Game extends SquareAABBCollidable {
                     if (this.snake.self_collision()) {
                         this.restart_game();
                     }
-                    this.snake.try_eat(this.food);
+                    const eaten = this.snake.try_eat(this.food);
                     this.snake.move(this);
+                    if (this.gen_heat_map && eaten)
+                        this.update_map();
                 }
                 if (this.gen_heat_map)
                     this.update_map();
