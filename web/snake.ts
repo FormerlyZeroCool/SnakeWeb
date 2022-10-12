@@ -242,7 +242,24 @@ class Game extends SquareAABBCollidable {
         }
         else
         {
-            view.fill(new RGB(25, 0, 255, 160).color, 0, view.length);
+            const color = new RGB(25, 0, 255, 160).color;
+            const remainder = view.length % 8;
+            const limit = view.length - remainder;
+            for(let i = 0; i < limit;)
+            {
+                view[i++] = color;
+                view[i++] = color;
+                view[i++] = color;
+                view[i++] = color;
+                view[i++] = color;
+                view[i++] = color;
+                view[i++] = color;
+                view[i++] = color;
+            }
+            for(let i = 0; i < remainder;)
+            {
+                view[i++] = color;
+            }
         }
         buf.refreshImage();
         ctx.drawImage(buf.image, x, y, width, height);
