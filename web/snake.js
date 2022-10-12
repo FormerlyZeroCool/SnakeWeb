@@ -109,6 +109,7 @@ class Game extends SquareAABBCollidable {
         this.initial_updates_per_second = window.rough_dim ? 300 : 17;
         this.updates_per_second = this.initial_updates_per_second;
         this.score = 0;
+        this.high_score = 0;
         this.update_count = 0;
         this.starting_lives = starting_lives;
         const whratio = width / (height > 0 ? height : width);
@@ -181,8 +182,9 @@ class Game extends SquareAABBCollidable {
         ctx.drawImage(buf.image, x, y, width, height);
         const font_size = 24;
         ctx.font = `${font_size}px Helvetica`;
-        ctx.strokeText(`Score: ${this.score}`, 25, font_size);
-        ctx.fillText(`Score: ${this.score}`, 25, font_size);
+        const text = `Score: ${this.score} High Score: ${this.high_score}`;
+        ctx.strokeText(text, 25, font_size);
+        ctx.fillText(text, 25, font_size);
         this.screen_buf.refreshImage();
         ctx.drawImage(this.screen_buf.image, x, y, width, height);
     }
@@ -296,6 +298,8 @@ class Game extends SquareAABBCollidable {
                 }
                 if (this.gen_heat_map)
                     this.update_map();
+                if (this.score > this.high_score)
+                    this.high_score = this.score;
             }
         }
     }
