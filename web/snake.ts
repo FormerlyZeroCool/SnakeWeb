@@ -4,6 +4,7 @@ import {random, srand, max_32_bit_signed, FixedSizeQueue, Queue, PriorityQueue} 
 import {non_elastic_no_angular_momentum_bounce_vector, get_normal_vector_aabb_rect_circle_collision, magnitude, dot_product_2d, scalar_product_2d, normalize2D, distance, GameObject, menu_font_size, SpatiallyMappableCircle, SpatialHashMap2D, SquareAABBCollidable, Circle, manhattan_distance } from './game_utils.js'
 class Snake {
     indexes:Queue<number>;
+    index_map:Set<number>;
     direction:number[];
     color:RGB;
     game:Game;
@@ -24,10 +25,12 @@ class Snake {
     init_snake():void
     {
         this.indexes = new Queue<number>();
+        this.index_map = new Set<number>();
         for(let i = this.initial_len - 1; i >= 0; i--)
         {
             const index = this.head_pos + i;
             this.indexes.push(index);
+            this.index_map.add(index);
             this.game.add_snake_piece(index);
         }
     }
@@ -87,23 +90,24 @@ class Snake {
         {
             this.game.score++;
             this.game.updates_per_second += this.game.ai ? 2 : 0.2;
-            if(this.indexes.indexOf(this.indexes.get(0) + 1) === -1)
+            if(!this.index_map.has(this.indexes.get(0) + 1))
             {
                 this.indexes.push_front(this.indexes.get(0) + 1);
             }
-            else if(this.indexes.indexOf(this.indexes.get(0) - 1) === -1)
+            else if(!this.index_map.has(this.indexes.get(0) - 1))
             {
                 this.indexes.push_front(this.indexes.get(0) - 1);
             }
-            else if(this.indexes.indexOf(this.indexes.get(0) + this.game.screen_buf.width) === -1)
+            else if(!this.index_map.has(this.indexes.get(0) + this.game.screen_buf.width))
             {
                 this.indexes.push_front(this.indexes.get(0) + this.game.screen_buf.width);
             }
-            else if(this.indexes.indexOf(this.indexes.get(0) - this.game.screen_buf.width) === -1)
+            else if(!this.index_map.has(this.indexes.get(0) - this.game.screen_buf.width))
             {
                 this.indexes.push_front(this.indexes.get(0) - this.game.screen_buf.width);
             }
             this.game.add_snake_piece(this.indexes.get(this.indexes.length - 1));
+            this.index_map.add(this.indexes.get(this.indexes.length - 1));
             this.game.food.reposition(this.game);
 
         }
@@ -242,11 +246,16 @@ class Game extends SquareAABBCollidable {
         }
         buf.refreshImage();
         ctx.drawImage(buf.image, x, y, width, height);
+
         const font_size = 24;
-        ctx.font = `${font_size}px Helvetica`;
+        if(+ctx.font.split("px")[0] != font_size)
+        {
+            ctx.font = `${font_size}px Helvetica`;
+        }
         const text = `Score: ${this.score} High Score: ${this.high_score}`;
-        ctx.strokeText(text, 25, font_size);
-        ctx.fillText(text, 25, font_size);
+        const max_width = Math.floor(width / 2) - 20;
+        ctx.strokeText(text, 25, font_size, max_width);
+        ctx.fillText(text, 25, font_size, max_width);
         this.screen_buf.refreshImage();
         ctx.drawImage(this.screen_buf.image, x, y, width, height);
     }
@@ -557,7 +566,6 @@ async function main()
             game.resize(width, height);
             canvas.width = width;
             canvas.height = height;
-            //game.paddle.update_state_paddle(0, game);
         }
         dt = Date.now() - start;
         time_queue.push(dt);
