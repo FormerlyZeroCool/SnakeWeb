@@ -239,6 +239,10 @@ class Game extends SquareAABBCollidable {
         }
         buf.refreshImage();
         ctx.drawImage(buf.image, x, y, width, height);
+        const font_size = 24;
+        ctx.font = `${font_size}px Helvetica`;
+        ctx.strokeText(`Score: ${this.score}`, 25, font_size);
+        ctx.fillText(`Score: ${this.score}`, 25, font_size);
         this.screen_buf.refreshImage();
         ctx.drawImage(this.screen_buf.image, x, y, width, height);
     }
@@ -563,7 +567,6 @@ async function main()
             }
         }
         game.update_state(dt);
-        ctx.fillStyle = "#000000";
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         game.draw(canvas, ctx, game.x, game.y, game.width, game.height);
         if(frame_count % 10 === 0)
