@@ -1,7 +1,7 @@
-import {SingleTouchListener, TouchMoveEvent, MouseDownTracker, isTouchSupported, KeyboardHandler} from './io.js'
-import {RegularPolygon, getHeight, getWidth, RGB, Sprite, blendAlphaCopy} from './gui.js'
+import {SingleTouchListener, isTouchSupported, KeyboardHandler} from './io.js'
+import {getHeight, getWidth, RGB, Sprite} from './gui.js'
 import {random, srand, max_32_bit_signed, FixedSizeQueue, Queue, PriorityQueue} from './utils.js'
-import {non_elastic_no_angular_momentum_bounce_vector, get_normal_vector_aabb_rect_circle_collision, magnitude, dot_product_2d, scalar_product_2d, normalize2D, distance, GameObject, menu_font_size, SpatiallyMappableCircle, SpatialHashMap2D, SquareAABBCollidable, Circle, manhattan_distance } from './game_utils.js'
+import {menu_font_size, SquareAABBCollidable } from './game_utils.js'
 class Snake {
     indexes:Queue<number>;
     index_map:Set<number>;
