@@ -45,9 +45,10 @@ class Snake {
             else
                 return true;
         }
+        if(this.directio)
         return false;
     }
-    move(game:Game):void
+    move(game:Game):boolean
     {
         const removed = this.indexes.pop();
         this.index_map.delete(removed);
@@ -55,21 +56,29 @@ class Snake {
         if(this.direction[0] > 0)
         {
             const new_piece_index = this.head_pos + 1;
+            if(game.is_snake_here(new_piece_index))
+                return false;
             this.indexes.push(new_piece_index);
         }
         else if(this.direction[0] < 0)
         {
             const new_piece_index = this.head_pos - 1;
+            if(game.is_snake_here(new_piece_index))
+                return false;
             this.indexes.push(new_piece_index);
         }
         else if(this.direction[1] > 0)
         {
             const new_piece_index = this.head_pos + game.screen_buf.width;
+            if(game.is_snake_here(new_piece_index))
+                return false;
             this.indexes.push(new_piece_index);
         }
         else if(this.direction[1] < 0)
         {
             const new_piece_index = this.head_pos - game.screen_buf.width;
+            if(game.is_snake_here(new_piece_index))
+                return false;
             this.indexes.push(new_piece_index);
         }
         const screen_len = this.game.screen_buf.width * this.game.screen_buf.height;
@@ -85,6 +94,7 @@ class Snake {
         }
         this.head_pos = this.indexes.get(this.indexes.length - 1);
         game.add_snake_piece(this.head_pos);
+        return true;
     }
     try_eat(food:Food):boolean
     {
@@ -414,12 +424,11 @@ class Game extends SquareAABBCollidable {
                            //this.move_random();
                         }
                     }
-                    if(this.snake.self_collision())
+                    if(!this.snake.move(this))
                     {
                         this.restart_game();
                     }
                     const eaten = this.snake.try_eat(this.food);
-                    this.snake.move(this);
                     if(this.gen_heat_map && eaten)
                         this.update_map();
                 }

@@ -38,8 +38,6 @@ export function get_normal_vector_aabb_rect_circle_collision(ball:SpatiallyMappa
             if(ball.mid_y() > brick.mid_y())//top right
             {
                 delta = [brick.x + brick.width - ball.mid_x(), -brick.y + ball.mid_y()];
-                //delta[0] *= -1;
-                //delta[1] *= -1;
                 point_collision[0] = brick.x + brick.width;
                 point_collision[1] = brick.y;
 
