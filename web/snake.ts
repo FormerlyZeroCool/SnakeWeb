@@ -172,7 +172,7 @@ class Game extends SquareAABBCollidable {
         this.last_update = 0;
         this.gen_heat_map = true;
         this.ai = true;
-        this.initial_updates_per_second = window.rough_dim ? 300 : 17;
+        this.initial_updates_per_second = window.rough_dim ? 300 : 12;
         this.updates_per_second = this.initial_updates_per_second;
         this.score = 0;
         this.high_score = 0;
