@@ -241,7 +241,7 @@ class Game extends SquareAABBCollidable {
         const buf = this.heat_map;
         const view = new Uint32Array(buf.imageData!.data.buffer);
         ctx.imageSmoothingEnabled = false;
-        if(this.ai){
+        if(this.ai && this.gen_heat_map){
             let current = this.snake.head_pos;
             let iterations = 0;
             const max_it = Math.max(this.screen_buf.width, this.screen_buf.height) * 2;
@@ -432,7 +432,7 @@ class Game extends SquareAABBCollidable {
                     if(this.gen_heat_map && eaten)
                         this.update_map();
                 }
-                if(this.gen_heat_map)
+                if(this.gen_heat_map && this.ai)
                     this.update_map();
                 
                 if(this.score > this.high_score)
