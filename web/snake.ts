@@ -261,7 +261,7 @@ class Game extends SquareAABBCollidable {
             for(let x = min; x < max; x++)
             {
                 let y:number = Math.abs(deltaX) > 0 ? m*(x) + b : y2;
-                view[Math.round(x) + Math.round(y) * this.screen_buf.width] = this.boundary_color.color;
+                view[Math.floor(x) + Math.floor(y) * this.screen_buf.width] = this.boundary_color.color;
             }
         }
         else
@@ -271,7 +271,7 @@ class Game extends SquareAABBCollidable {
             for(let y = min; y < max; y+=delta)
             {
                 const x:number = Math.abs(deltaX)>0?(y - b)/m:x2;
-                view[Math.round(x) + Math.round(y) * this.screen_buf.width] = this.boundary_color.color;
+                view[Math.floor(x) + Math.floor(y) * this.screen_buf.width] = this.boundary_color.color;
             }
         }
     }
