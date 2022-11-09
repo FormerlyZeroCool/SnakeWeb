@@ -79,7 +79,7 @@ class Snake {
     try_eat(food) {
         if (food.index === this.head_pos) {
             this.game.score++;
-            this.game.updates_per_second += this.game.ai ? 2 : 0.2;
+            this.game.updates_per_second += this.game.ai ? .8 : 0.2;
             if (!this.index_map.has(this.indexes.get(0) + 1)) {
                 this.indexes.push_front(this.indexes.get(0) + 1);
             }
