@@ -32,8 +32,8 @@ class Snake {
             else
                 return true;
         }
-        if (this.directio)
-            return false;
+        //if(this.direction)
+        return false;
     }
     move(game) {
         const removed = this.indexes.pop();
@@ -123,6 +123,7 @@ class Game extends SquareAABBCollidable {
         this.last_update = 0;
         this.gen_heat_map = true;
         this.ai = true;
+        this.boundary_color = new RGB(140, 20, 200, 255);
         this.initial_updates_per_second = window.rough_dim ? 300 : 12;
         this.updates_per_second = this.initial_updates_per_second;
         this.score = 0;
@@ -176,6 +177,38 @@ class Game extends SquareAABBCollidable {
     resize(width, height) {
         this.width = width;
         this.height = height;
+    }
+    draw_boundary(x1, x2, y1, y2, view = new Int32Array(this.screen_buf.imageData.data.buffer)) {
+        const x_scale = 1 / this.width * this.screen_buf.width;
+        const y_scale = 1 / this.height * this.screen_buf.height;
+        x1 *= x_scale;
+        x2 *= x_scale;
+        y1 *= y_scale;
+        y2 *= y_scale;
+        //draw line from current touch pos to the touchpos minus the deltas
+        //calc equation for line
+        const deltaY = y2 - y1;
+        const deltaX = x2 - x1;
+        const m = deltaY / deltaX;
+        const b = y2 - m * x2;
+        const delta = 0.1;
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            const min = Math.min(x1, x2);
+            const max = Math.max(x1, x2);
+            let error = 0;
+            for (let x = min; x < max; x++) {
+                let y = Math.abs(deltaX) > 0 ? m * (x) + b : y2;
+                view[Math.round(x) + Math.round(y) * this.screen_buf.width] = this.boundary_color.color;
+            }
+        }
+        else {
+            const min = Math.min(y1, y2);
+            const max = Math.max(y1, y2);
+            for (let y = min; y < max; y += delta) {
+                const x = Math.abs(deltaX) > 0 ? (y - b) / m : x2;
+                view[Math.round(x) + Math.round(y) * this.screen_buf.width] = this.boundary_color.color;
+            }
+        }
     }
     draw(canvas, ctx, x, y, width, height) {
         const buf = this.heat_map;
@@ -419,6 +452,10 @@ async function main() {
     window.game = game;
     let low_fps = false;
     touchListener.registerCallBack("touchmove", (event) => true, (event) => {
+        if (keyboardHandler.keysHeld["KeyB"] || Date.now() - event.startTouchTime > 1000) {
+            game.draw_boundary(event.touchPos[0] - event.deltaX, event.touchPos[0], event.touchPos[1] - event.deltaY, event.touchPos[1]);
+            return;
+        }
         game.ai = false;
         if (Math.abs(event.deltaX) < Math.abs(event.deltaY)) {
             if (event.deltaY < 0)

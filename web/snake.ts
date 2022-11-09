@@ -1,4 +1,4 @@
-import {SingleTouchListener, isTouchSupported, KeyboardHandler} from './io.js'
+import {SingleTouchListener, isTouchSupported, KeyboardHandler, TouchMoveEvent} from './io.js'
 import {getHeight, getWidth, RGB, Sprite} from './gui.js'
 import {random, srand, max_32_bit_signed, FixedSizeQueue, Queue, PriorityQueue} from './utils.js'
 import {menu_font_size, SquareAABBCollidable } from './game_utils.js'
@@ -45,7 +45,7 @@ class Snake {
             else
                 return true;
         }
-        if(this.directio)
+        //if(this.direction)
         return false;
     }
     move(game:Game):boolean
@@ -162,6 +162,7 @@ class Game extends SquareAABBCollidable {
     cost_map:Int32Array;
     path_map:Int32Array;
     background_color:RGB;
+    boundary_color:RGB;
     update_count:number;
     ai:boolean;
     gen_heat_map:boolean;
@@ -172,6 +173,7 @@ class Game extends SquareAABBCollidable {
         this.last_update = 0;
         this.gen_heat_map = true;
         this.ai = true;
+        this.boundary_color = new RGB(140, 20, 200, 255);
         this.initial_updates_per_second = window.rough_dim ? 300 : 12;
         this.updates_per_second = this.initial_updates_per_second;
         this.score = 0;
@@ -235,6 +237,43 @@ class Game extends SquareAABBCollidable {
     {
         this.width = width;
         this.height = height;
+    }
+    draw_boundary(x1:number, x2:number, y1:number, y2:number, view:Int32Array = new Int32Array(this.screen_buf.imageData!.data.buffer)):void
+    {
+        const x_scale = 1/this.width * this.screen_buf.width;
+        const y_scale = 1/this.height * this.screen_buf.height;
+        x1 *= x_scale;
+        x2 *= x_scale;
+        y1 *= y_scale;
+        y2 *= y_scale;
+        //draw line from current touch pos to the touchpos minus the deltas
+        //calc equation for line
+        const deltaY = y2 - y1;
+        const deltaX = x2 - x1;
+        const m:number = deltaY/deltaX;
+        const b:number = y2-m*x2;
+        const delta:number = 0.1;
+        if(Math.abs(deltaX) > Math.abs(deltaY))
+        {
+            const min:number = Math.min(x1, x2);
+            const max:number = Math.max(x1, x2);
+            let error:number = 0;
+            for(let x = min; x < max; x++)
+            {
+                let y:number = Math.abs(deltaX) > 0 ? m*(x) + b : y2;
+                view[Math.round(x) + Math.round(y) * this.screen_buf.width] = this.boundary_color.color;
+            }
+        }
+        else
+        {
+            const min:number = Math.min(y1, y2);
+            const max:number = Math.max(y1, y2);
+            for(let y = min; y < max; y+=delta)
+            {
+                const x:number = Math.abs(deltaX)>0?(y - b)/m:x2;
+                view[Math.round(x) + Math.round(y) * this.screen_buf.width] = this.boundary_color.color;
+            }
+        }
     }
     draw(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void 
     {
@@ -528,7 +567,13 @@ async function main()
     let game = new Game(3, 0, 0, height, width);
     window.game = game;
     let low_fps:boolean = false;
-    touchListener.registerCallBack("touchmove", (event:any) => true, (event:any) => {
+    touchListener.registerCallBack("touchmove", (event:any) => true, (event:TouchMoveEvent) => {
+
+        if(keyboardHandler.keysHeld["KeyB"] || Date.now() - event.startTouchTime > 1000)
+        {
+            game.draw_boundary(event.touchPos[0] - event.deltaX, event.touchPos[0], event.touchPos[1] - event.deltaY, event.touchPos[1]);
+            return;
+        }
         game.ai = false;
         if(Math.abs(event.deltaX) < Math.abs(event.deltaY))
         {
