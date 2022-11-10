@@ -567,6 +567,10 @@ async function main()
     let game = new Game(3, 0, 0, height, width);
     window.game = game;
     let low_fps:boolean = false;
+    let draw = false;
+    touchListener.registerCallBack("touchend", (event:any) => true, (event:TouchMoveEvent) => {
+       game.ai = (touchListener.timeSinceLastTouch < 200);
+    });
     touchListener.registerCallBack("touchmove", (event:any) => true, (event:TouchMoveEvent) => {
 
         if(keyboardHandler.keysHeld["KeyB"] || Date.now() - event.startTouchTime > 1000)

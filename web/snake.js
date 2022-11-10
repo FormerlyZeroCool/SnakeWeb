@@ -451,6 +451,10 @@ async function main() {
     let game = new Game(3, 0, 0, height, width);
     window.game = game;
     let low_fps = false;
+    let draw = false;
+    touchListener.registerCallBack("touchend", (event) => true, (event) => {
+        game.ai = (touchListener.timeSinceLastTouch < 200);
+    });
     touchListener.registerCallBack("touchmove", (event) => true, (event) => {
         if (keyboardHandler.keysHeld["KeyB"] || Date.now() - event.startTouchTime > 1000) {
             game.draw_boundary(event.touchPos[0] - event.deltaX, event.touchPos[0], event.touchPos[1] - event.deltaY, event.touchPos[1]);

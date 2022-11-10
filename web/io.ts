@@ -120,6 +120,7 @@ export class MouseDownTracker {
 export class SingleTouchListener
 {
     lastTouchTime:number;
+    timeSinceLastTouch:number;
     moveCount:number;
     preventDefault:any;
     touchStart:any;
@@ -140,6 +141,7 @@ export class SingleTouchListener
     constructor(component:HTMLElement | null, preventDefault:boolean, mouseEmulation:boolean, stopRightClick:boolean = false)
     {
         this.lastTouchTime = Date.now();
+        this.timeSinceLastTouch = Date.now() - this.lastTouchTime;
         this.offset = [];
         this.moveCount = 0;
         this.touchMoveEvents = [];
@@ -204,6 +206,7 @@ export class SingleTouchListener
     }
     touchStartHandler(event:any):void
     {
+        this.timeSinceLastTouch = Date.now() - this.lastTouchTime;
         this.registeredTouch = true;
         this.moveCount = 0;
         event.timeSinceLastTouch = Date.now() - (this.lastTouchTime?this.lastTouchTime:0);
