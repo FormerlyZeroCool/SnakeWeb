@@ -165,6 +165,7 @@ class Game extends SquareAABBCollidable {
     boundary_color:RGB;
     update_count:number;
     ai:boolean;
+    paused:boolean;
     gen_heat_map:boolean;
     initial_updates_per_second:number;
     constructor(starting_lives:number, x:number, y:number, width:number, height:number)
@@ -172,6 +173,7 @@ class Game extends SquareAABBCollidable {
         super(x, y, width, height);
         this.last_update = 0;
         this.gen_heat_map = true;
+        this.paused = false;
         this.ai = true;
         this.boundary_color = new RGB(140, 20, 200, 255);
         this.initial_updates_per_second = window.rough_dim ? 300 : 12;
@@ -437,7 +439,7 @@ class Game extends SquareAABBCollidable {
     update_state(delta_time: number): void 
     {
         const dt = Date.now() - this.last_update;
-        if(dt > 1000 / this.updates_per_second)
+        if(dt > 1000 / this.updates_per_second && !this.paused)
         {
             this.last_update = Date.now();
             const runs = Math.floor(dt / (1000 / this.updates_per_second));
@@ -603,6 +605,9 @@ async function main()
         {
             case("KeyA"):
             game.ai = !game.ai;
+            break;
+            case("KeyP"):
+            game.paused = !game.paused;
             break;
             case("KeyG"):
             game.gen_heat_map = !game.gen_heat_map;
