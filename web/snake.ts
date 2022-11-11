@@ -308,7 +308,7 @@ class Game extends SquareAABBCollidable {
         if(this.ai && this.gen_heat_map){
             let current = this.snake.head_pos;
             let iterations = 0;
-            const max_it = Math.max(this.screen_buf.width, this.screen_buf.height) * 2;
+            const max_it = Math.max(this.screen_buf.width, this.screen_buf.height) * 20;
             const black = new RGB(0, 0, 0, 255);
             while(current !== this.food.index && iterations < max_it)
             {
