@@ -146,7 +146,7 @@ class Food {
     }
     reposition(game:Game):void
     {
-        while(game.is_snake_here(this.index))
+        while(game.is_snake_here(this.index) || game.is_boundary(this.index))
         {
             this.index = Math.floor(game.screen_buf.width * game.screen_buf.height * Math.random());
         }
@@ -192,6 +192,7 @@ class Game extends SquareAABBCollidable {
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.restart_game()
     }
+
     add_snake_piece(index:number):boolean
     {
         return this.add_place(index, this.snake.color.color);
@@ -214,6 +215,11 @@ class Game extends SquareAABBCollidable {
     {
         const view = new Int32Array(this.screen_buf.imageData!.data.buffer);
         return this.get_place(index) === this.background_color.color;
+    }
+    is_boundary(index:number):boolean
+    {
+        const view = new Int32Array(this.screen_buf.imageData!.data.buffer);
+        return this.get_place(index) === this.boundary_color.color;
     }
     get_place(index:number):number | null
     {
@@ -263,7 +269,7 @@ class Game extends SquareAABBCollidable {
         this.width = width;
         this.height = height;
     }
-    draw_boundary(x1:number, x2:number, y1:number, y2:number, view:Int32Array = new Int32Array(this.screen_buf.imageData!.data.buffer)):void
+    draw_boundary(x1:number, x2:number, y1:number, y2:number, color:number = this.boundary_color.color, view:Int32Array = new Int32Array(this.screen_buf.imageData!.data.buffer)):void
     {
         const x_scale = 1/this.width * this.screen_buf.width;
         const y_scale = 1/this.height * this.screen_buf.height;
@@ -286,7 +292,7 @@ class Game extends SquareAABBCollidable {
             for(let x = min; x < max; x++)
             {
                 let y:number = Math.abs(deltaX) > 0 ? m*(x) + b : y2;
-                view[Math.floor(x) + Math.floor(y) * this.screen_buf.width] = this.boundary_color.color;
+                view[Math.floor(x) + Math.floor(y) * this.screen_buf.width] = color;
             }
         }
         else
@@ -296,7 +302,7 @@ class Game extends SquareAABBCollidable {
             for(let y = min; y < max; y+=delta)
             {
                 const x:number = Math.abs(deltaX)>0?(y - b)/m:x2;
-                view[Math.floor(x) + Math.floor(y) * this.screen_buf.width] = this.boundary_color.color;
+                view[Math.floor(x) + Math.floor(y) * this.screen_buf.width] = color;
             }
         }
     }
@@ -596,13 +602,18 @@ async function main()
     window.game = game;
     let low_fps:boolean = false;
     let draw = false;
-    touchListener.registerCallBack("touchend", (event:any) => true, (event:TouchMoveEvent) => {
+    touchListener.registerCallBack("touchend", (event:any) => !(keyboardHandler.keysHeld["KeyB"]), (event:TouchMoveEvent) => {
        game.ai = (touchListener.timeSinceLastTouch < 200);
     });
     touchListener.registerCallBack("touchmove", (event:any) => true, (event:TouchMoveEvent) => {
 
         if(keyboardHandler.keysHeld["KeyB"] || Date.now() - event.startTouchTime > 1000)
         {
+            if(keyboardHandler.keysHeld["KeyD"])
+            {
+                game.draw_boundary(event.touchPos[0] - event.deltaX, event.touchPos[0], event.touchPos[1] - event.deltaY, event.touchPos[1], game.background_color.color);
+                return;
+            }
             game.draw_boundary(event.touchPos[0] - event.deltaX, event.touchPos[0], event.touchPos[1] - event.deltaY, event.touchPos[1]);
             return;
         }
