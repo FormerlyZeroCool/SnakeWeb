@@ -4,7 +4,7 @@ import {random, srand, max_32_bit_signed, FixedSizeQueue, Queue, PriorityQueue} 
 import {menu_font_size, SquareAABBCollidable } from './game_utils.js'
 class Snake {
     indexes:Queue<number>;
-    index_map:Set<number>;
+    non_background_color_map:Map<number, number>;
     direction:number[];
     color:RGB;
     game:Game;
@@ -19,18 +19,17 @@ class Snake {
     {
         this.direction = [-1, 0];
         this.color = new RGB(190, 255, 40, 255);
+        this.non_background_color_map = new Map<number, number>();
         this.initial_len = initial_len;
         this.head_pos = head_pos;
     }
     init_snake():void
     {
         this.indexes = new Queue<number>();
-        this.index_map = new Set<number>();
         for(let i = this.initial_len - 1; i >= 0; i--)
         {
             const index = this.head_pos + i;
             this.indexes.push(index);
-            this.index_map.add(index);
             this.game.add_snake_piece(index);
         }
     }
@@ -51,8 +50,13 @@ class Snake {
     move(game:Game):boolean
     {
         const removed = this.indexes.pop();
-        this.index_map.delete(removed);
-        game.clear_place(removed)
+        if(this.non_background_color_map.has(removed))
+        {
+            game.add_place(removed, this.non_background_color_map.get(removed)!);
+            this.non_background_color_map.delete(removed);
+        }
+        else
+            game.clear_place(removed);
         if(this.direction[0] > 0)
         {
             const new_piece_index = this.head_pos + 1;
@@ -83,7 +87,6 @@ class Snake {
         }
         const screen_len = this.game.screen_buf.width * this.game.screen_buf.height;
         let new_index = this.indexes.get(this.indexes.length - 1);
-        this.index_map.add(new_index);
         if(new_index < 0 && this.indexes.length)
         {
             this.indexes.set(this.indexes.length - 1, screen_len - new_index);
@@ -93,6 +96,10 @@ class Snake {
             this.indexes.set(this.indexes.length - 1, -screen_len + new_index);
         }
         this.head_pos = this.indexes.get(this.indexes.length - 1);
+        if(!this.game.is_background_or_food_or_snake(this.head_pos))
+        {
+            this.non_background_color_map.set(this.head_pos, this.game.get_place(this.head_pos)!);
+        }
         game.add_snake_piece(this.head_pos);
         return true;
     }
@@ -102,24 +109,23 @@ class Snake {
         {
             this.game.score++;
             this.game.updates_per_second += this.game.ai ? .8 : 0.2;
-            if(!this.index_map.has(this.indexes.get(0) + 1))
+            if(!this.game.is_snake_here(this.indexes.get(0) + 1))
             {
                 this.indexes.push_front(this.indexes.get(0) + 1);
             }
-            else if(!this.index_map.has(this.indexes.get(0) - 1))
+            else if(!this.game.is_snake_here(this.indexes.get(0) - 1))
             {
                 this.indexes.push_front(this.indexes.get(0) - 1);
             }
-            else if(!this.index_map.has(this.indexes.get(0) + this.game.screen_buf.width))
+            else if(!this.game.is_snake_here(this.indexes.get(0) + this.game.screen_buf.width))
             {
                 this.indexes.push_front(this.indexes.get(0) + this.game.screen_buf.width);
             }
-            else if(!this.index_map.has(this.indexes.get(0) - this.game.screen_buf.width))
+            else if(!this.game.is_snake_here(this.indexes.get(0) - this.game.screen_buf.width))
             {
                 this.indexes.push_front(this.indexes.get(0) - this.game.screen_buf.width);
             }
             this.game.add_snake_piece(this.indexes.get(this.indexes.length - 1));
-            this.index_map.add(this.indexes.get(this.indexes.length - 1));
             this.game.food.reposition(this.game);
             return true;
         }
@@ -140,12 +146,11 @@ class Food {
     }
     reposition(game:Game):void
     {
-        while(game.snake.indexes.indexOf(game.food.index) !== -1)
+        while(game.is_snake_here(this.index))
         {
-            game.food.index = Math.floor(game.snake.game.screen_buf.width * game.snake.game.screen_buf.height * Math.random());
+            this.index = Math.floor(game.screen_buf.width * game.screen_buf.height * Math.random());
         }
-        
-        game.snake.game.add_place(game.food.index, game.food.color.color);
+        game.add_place(this.index, this.color.color);
     }
 };
 class Game extends SquareAABBCollidable {
@@ -200,6 +205,24 @@ class Game extends SquareAABBCollidable {
             return true;
         }
         return false;
+    }
+    is_background_or_food_or_snake(index:number):boolean
+    {
+        return this.is_background(index) || this.is_snake_here(index) || this.food.index === index;
+    }
+    is_background(index:number):boolean
+    {
+        const view = new Int32Array(this.screen_buf.imageData!.data.buffer);
+        return this.get_place(index) === this.background_color.color;
+    }
+    get_place(index:number):number | null
+    {
+        const view = new Int32Array(this.screen_buf.imageData!.data.buffer);
+        if(view[index] !== undefined)
+        {
+            return view[index];
+        }
+        return null;
     }
     clear_place(removed:number):boolean
     {
@@ -439,45 +462,48 @@ class Game extends SquareAABBCollidable {
     update_state(delta_time: number): void 
     {
         const dt = Date.now() - this.last_update;
-        if(dt > 1000 / this.updates_per_second && !this.paused)
+        if(dt > 1000 / this.updates_per_second)
         {
             this.last_update = Date.now();
-            const runs = Math.floor(dt / (1000 / this.updates_per_second));
-            if(runs < 1000)
+            if(!this.paused)
             {
-                for(let i = 0; i < runs; i++)
+                const runs = Math.floor(dt / (1000 / this.updates_per_second));
+                if(runs < 1000)
                 {
-                    this.update_count++;
-
-                    if(this.ai)
+                    for(let i = 0; i < runs; i++)
                     {
-                        const to_cell = this.path_map[this.snake.head_pos];
-                        if(to_cell === this.snake.head_pos + 1) 
-                            this.move_right();
-                        else if(to_cell === this.snake.head_pos - 1) 
-                            this.move_left()
-                        else if(to_cell === this.snake.head_pos + this.screen_buf.width)
-                            this.move_down();
-                        else if(to_cell === this.snake.head_pos - this.screen_buf.width)
-                            this.move_up();
-                        else
+                        this.update_count++;
+    
+                        if(this.ai)
                         {
-                           //this.move_random();
+                            const to_cell = this.path_map[this.snake.head_pos];
+                            if(to_cell === this.snake.head_pos + 1) 
+                                this.move_right();
+                            else if(to_cell === this.snake.head_pos - 1) 
+                                this.move_left()
+                            else if(to_cell === this.snake.head_pos + this.screen_buf.width)
+                                this.move_down();
+                            else if(to_cell === this.snake.head_pos - this.screen_buf.width)
+                                this.move_up();
+                            else
+                            {
+                               //this.move_random();
+                            }
                         }
+                        if(!this.snake.move(this))
+                        {
+                            this.restart_game();
+                        }
+                        const eaten = this.snake.try_eat(this.food);
+                        if(this.gen_heat_map && eaten)
+                            this.update_map();
                     }
-                    if(!this.snake.move(this))
-                    {
-                        this.restart_game();
-                    }
-                    const eaten = this.snake.try_eat(this.food);
-                    if(this.gen_heat_map && eaten)
+                    if(this.gen_heat_map && this.ai)
                         this.update_map();
+                    
+                    if(this.score > this.high_score)
+                        this.high_score = this.score;
                 }
-                if(this.gen_heat_map && this.ai)
-                    this.update_map();
-                
-                if(this.score > this.high_score)
-                    this.high_score = this.score;
             }
         }
     }
