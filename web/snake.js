@@ -129,7 +129,7 @@ class Game extends SquareAABBCollidable {
         this.paused = false;
         this.ai = true;
         this.boundary_color = new RGB(140, 20, 200, 255);
-        this.initial_updates_per_second = window.rough_dim ? 300 : 12;
+        this.initial_updates_per_second = window.rough_dim ? 300 : 9;
         this.updates_per_second = this.initial_updates_per_second;
         this.score = 0;
         this.high_score = 0;
@@ -156,11 +156,11 @@ class Game extends SquareAABBCollidable {
     }
     is_background(index) {
         const view = new Int32Array(this.screen_buf.imageData.data.buffer);
-        return this.get_place(index) === this.background_color.color;
+        return this.get_place(index) == this.background_color.color;
     }
     is_boundary(index) {
         const view = new Int32Array(this.screen_buf.imageData.data.buffer);
-        return this.get_place(index) === this.boundary_color.color;
+        return this.get_place(index) == this.boundary_color.color;
     }
     get_place(index) {
         const view = new Int32Array(this.screen_buf.imageData.data.buffer);
@@ -191,7 +191,17 @@ class Game extends SquareAABBCollidable {
         this.cost_map = new Int32Array(cell_height * cell_width).fill(0, 0, cell_height * cell_width);
         this.path_map = new Int32Array(cell_height * cell_width).fill(0, 0, cell_height * cell_width);
         const pixels = (new Array(cell_height * cell_width)).fill(this.background_color, 0, cell_height * cell_width);
+        const old_buf = this.screen_buf;
         this.screen_buf = new Sprite(pixels, cell_width, cell_height, false);
+        if (old_buf) {
+            const view = new Int32Array(old_buf.imageData.data.buffer);
+            const view_new = new Int32Array(this.screen_buf.imageData.data.buffer);
+            for (let i = 0; i < view.length; i++) {
+                if (!(view[i] == this.background_color.color || view[i] == this.snake.color.color || this.food.index == i))
+                    view_new[i] = view[i];
+            }
+            this.screen_buf.refreshImage();
+        }
         this.food = new Food(Math.floor(this.screen_buf.width * this.screen_buf.height * random()), new RGB(255, 0, 0, 255));
         this.snake = new Snake(this, 2, Math.floor(cell_width / 2) + Math.floor(cell_height / 2) * cell_width);
         this.snake.init_snake();
