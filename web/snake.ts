@@ -181,7 +181,7 @@ class Game extends SquareAABBCollidable {
         this.paused = false;
         this.ai = true;
         this.boundary_color = new RGB(140, 20, 200, 255);
-        this.initial_updates_per_second = window.rough_dim ? 300 : 9;
+        this.initial_updates_per_second = window.rough_dim ? 300 : 10;
         this.updates_per_second = this.initial_updates_per_second;
         this.score = 0;
         this.high_score = 0;
