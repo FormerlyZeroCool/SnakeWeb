@@ -1,6 +1,6 @@
 import { SingleTouchListener, isTouchSupported, KeyboardHandler } from './io.js';
-import { getHeight, getWidth, RGB, Sprite } from './gui.js';
-import { random, srand, max_32_bit_signed, FixedSizeQueue, Queue, PriorityQueue } from './utils.js';
+import { getHeight, getWidth, RGB, Sprite, GuiButtonFileOpener, GuiButton, SimpleGridLayoutManager } from './gui.js';
+import { random, srand, max_32_bit_signed, DynamicInt32Array, saveBlob, FixedSizeQueue, Queue, PriorityQueue } from './utils.js';
 import { menu_font_size, SquareAABBCollidable } from './game_utils.js';
 class Snake {
     constructor(game, initial_len, head_pos) {
@@ -36,9 +36,15 @@ class Snake {
     }
     move(game) {
         const removed = this.indexes.pop();
+        //manage map that stores what lies under the snake
         if (this.non_background_color_map.has(removed)) {
-            game.add_place(removed, this.non_background_color_map.get(removed));
-            this.non_background_color_map.delete(removed);
+            const rec = this.non_background_color_map.get(removed);
+            if (rec) {
+                game.add_place(removed, rec.color);
+                rec.count--;
+                if (rec.count <= 0)
+                    this.non_background_color_map.delete(removed);
+            }
         }
         else
             game.clear_place(removed);
@@ -76,7 +82,7 @@ class Snake {
         }
         this.head_pos = this.indexes.get(this.indexes.length - 1);
         if (!this.game.is_background_or_food_or_snake(this.head_pos)) {
-            this.non_background_color_map.set(this.head_pos, this.game.get_place(this.head_pos));
+            this.non_background_color_map.set(this.head_pos, { color: this.game.get_place(this.head_pos), count: 1 });
         }
         game.add_snake_piece(this.head_pos);
         return true;
@@ -86,6 +92,9 @@ class Snake {
             this.game.score++;
             this.game.updates_per_second += this.game.ai ? .8 : 0.2;
             this.indexes.push(this.indexes.get(0));
+            if (this.non_background_color_map.has(this.indexes.get(0))) {
+                this.non_background_color_map.get(this.indexes.get(0)).count++;
+            }
             this.game.food.reposition(this.game);
             return true;
         }
@@ -116,6 +125,12 @@ class Game extends SquareAABBCollidable {
         this.gen_heat_map = true;
         this.paused = false;
         this.ai = true;
+        this.GuiFileOpener = new GuiButtonFileOpener((binary) => this.load_binary(binary), "Load Boundary Map", 250, 50, 20);
+        this.GuiFileSaver = new GuiButton(() => this.save_as("boundary_map_snake.bmap"), "Save Boundary Map", 250, 50, 20);
+        this.GuiManager = new SimpleGridLayoutManager([2, 1], [this.GuiFileOpener.width() * 2, this.GuiFileOpener.height()], 0, this.height);
+        this.GuiManager.addElement(this.GuiFileOpener);
+        this.GuiManager.addElement(this.GuiFileSaver);
+        this.GuiManager.activate();
         this.boundary_color = new RGB(140, 20, 200, 255);
         this.initial_updates_per_second = window.rough_dim ? 300 : 10;
         this.updates_per_second = this.initial_updates_per_second;
@@ -127,6 +142,32 @@ class Game extends SquareAABBCollidable {
         const rough_dim = window.rough_dim ? window.rough_dim : 30;
         this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
         this.restart_game();
+    }
+    to_binary() {
+        const buf = new Int32Array(this.screen_buf.imageData.data.buffer);
+        const uncompressed = new DynamicInt32Array(256);
+        for (let i = 0; i < buf.length; i++) {
+            if (buf[i] == this.boundary_color.color)
+                uncompressed.push(i);
+        }
+        return uncompressed.trimmed();
+    }
+    load_binary(data) {
+        const view = new Int32Array(this.screen_buf.imageData.data.buffer);
+        for (let i = 0; i < view.length; i++) {
+            //clear existing boundaries
+            if (view[i] == this.boundary_color.color) {
+                view[i] = this.background_color.color;
+            }
+        }
+        for (let i = 0; i < data.length; i++) {
+            if (data[i] < view.length && data[i] >= 0) {
+                view[data[i]] = this.boundary_color.color;
+            }
+        }
+    }
+    save_as(name) {
+        saveBlob(new Blob([(this.to_binary())], { type: "application/octet-stream" }), name);
     }
     add_snake_piece(index) {
         return this.add_place(index, this.snake.color.color);
@@ -282,6 +323,8 @@ class Game extends SquareAABBCollidable {
         }
         this.screen_buf.refreshImage();
         ctx.drawImage(this.screen_buf.image, x, y, width, height);
+        this.GuiManager.y = this.height;
+        this.GuiManager.draw(ctx, 0, this.height);
     }
     cell_dist(cell1, cell2) {
         const c1x = cell1 % this.screen_buf.width;
@@ -475,10 +518,15 @@ async function main() {
     window.game = game;
     let low_fps = false;
     let draw = false;
+    touchListener.registerCallBack("touchstart", (event) => !(keyboardHandler.keysHeld["KeyB"]), (event) => {
+        game.GuiManager.handleTouchEvents("touchstart", event);
+    });
     touchListener.registerCallBack("touchend", (event) => !(keyboardHandler.keysHeld["KeyB"]), (event) => {
         game.ai = (touchListener.timeSinceLastTouch < 200);
+        game.GuiManager.handleTouchEvents("touchend", event);
     });
     touchListener.registerCallBack("touchmove", (event) => true, (event) => {
+        game.GuiManager.handleTouchEvents("touchmove", event);
         if (keyboardHandler.keysHeld["KeyB"] || Date.now() - event.startTouchTime > 1000) {
             if (keyboardHandler.keysHeld["KeyD"]) {
                 game.draw_boundary(event.touchPos[0] - event.deltaX, event.touchPos[0], event.touchPos[1] - event.deltaY, event.touchPos[1], game.background_color.color);

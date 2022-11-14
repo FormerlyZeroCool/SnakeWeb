@@ -1242,6 +1242,29 @@ export class GuiButton implements GuiElement {
         }
     }
 };
+
+interface FilesHaver{
+    files:FileList;
+};
+export class GuiButtonFileOpener extends GuiButton {
+    constructor(callback:(binary:Int32Array) => void, text:string, width:number, height:number, fontSize = 12, pressedColor:RGB = new RGB(150, 150, 200, 255), unPressedColor:RGB = new RGB(255, 255, 255, 195), fontName:string = "Helvetica")
+    {
+        super(() => {
+            const input:HTMLInputElement = document.createElement('input');
+            input.type="file";
+            input.addEventListener('change', (event) => {
+                const fileList:FileList = (<FilesHaver> <Object> event.target).files;
+                const reader = new FileReader();
+                fileList[0].arrayBuffer().then((buffer) =>
+                  {
+                      const binary:Int32Array = new Int32Array(buffer);
+                      callback(binary);
+                  });
+              });
+            input.click();
+        }, text, width, height, fontSize, pressedColor, unPressedColor, fontName);
+    }
+}
 export class GuiCheckBox implements GuiElement {
 
     checked:boolean;

@@ -982,6 +982,24 @@ export class GuiButton {
     }
 }
 ;
+;
+export class GuiButtonFileOpener extends GuiButton {
+    constructor(callback, text, width, height, fontSize = 12, pressedColor = new RGB(150, 150, 200, 255), unPressedColor = new RGB(255, 255, 255, 195), fontName = "Helvetica") {
+        super(() => {
+            const input = document.createElement('input');
+            input.type = "file";
+            input.addEventListener('change', (event) => {
+                const fileList = event.target.files;
+                const reader = new FileReader();
+                fileList[0].arrayBuffer().then((buffer) => {
+                    const binary = new Int32Array(buffer);
+                    callback(binary);
+                });
+            });
+            input.click();
+        }, text, width, height, fontSize, pressedColor, unPressedColor, fontName);
+    }
+}
 export class GuiCheckBox {
     constructor(callBack, width = 50, height = 50, checked = false, unPressedColor = new RGB(255, 255, 255, 0), pressedColor = new RGB(150, 150, 200, 255), fontSize = height - 10) {
         this.checked = checked;
