@@ -109,23 +109,7 @@ class Snake {
         {
             this.game.score++;
             this.game.updates_per_second += this.game.ai ? .8 : 0.2;
-            if(!this.game.is_snake_here(this.indexes.get(0) + 1))
-            {
-                this.indexes.push_front(this.indexes.get(0) + 1);
-            }
-            else if(!this.game.is_snake_here(this.indexes.get(0) - 1))
-            {
-                this.indexes.push_front(this.indexes.get(0) - 1);
-            }
-            else if(!this.game.is_snake_here(this.indexes.get(0) + this.game.screen_buf.width))
-            {
-                this.indexes.push_front(this.indexes.get(0) + this.game.screen_buf.width);
-            }
-            else if(!this.game.is_snake_here(this.indexes.get(0) - this.game.screen_buf.width))
-            {
-                this.indexes.push_front(this.indexes.get(0) - this.game.screen_buf.width);
-            }
-            this.game.add_snake_piece(this.indexes.get(this.indexes.length - 1));
+            this.indexes.push(this.indexes.get(0));
             this.game.food.reposition(this.game);
             return true;
         }
