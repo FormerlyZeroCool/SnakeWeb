@@ -308,7 +308,8 @@ class Game extends SquareAABBCollidable {
             const color = new RGB(25, 0, 255, 160).color;
             const remainder = view.length % 8;
             const limit = view.length - remainder;
-            for (let i = 0; i < limit;) {
+            let i = 0;
+            for (; i < limit;) {
                 view[i++] = color;
                 view[i++] = color;
                 view[i++] = color;
@@ -318,7 +319,7 @@ class Game extends SquareAABBCollidable {
                 view[i++] = color;
                 view[i++] = color;
             }
-            for (let i = 0; i < remainder;) {
+            for (; i < view.length;) {
                 view[i++] = color;
             }
         }
