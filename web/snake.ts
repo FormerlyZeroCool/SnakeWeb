@@ -1,5 +1,5 @@
 import {SingleTouchListener, isTouchSupported, KeyboardHandler, TouchMoveEvent} from './io.js'
-import {getHeight, getWidth, RGB, Sprite, GuiButtonFileOpener, GuiButton, SimpleGridLayoutManager} from './gui.js'
+import {getHeight, getWidth, RGB, Sprite, GuiButtonFileOpener, GuiButton, SimpleGridLayoutManager, GuiTextBox} from './gui.js'
 import {random, srand, max_32_bit_signed, DynamicInt32Array, saveBlob, FixedSizeQueue, Queue, PriorityQueue} from './utils.js'
 import {menu_font_size, SquareAABBCollidable } from './game_utils.js'
 interface ColorAndCount
@@ -101,7 +101,7 @@ class Snake {
         let new_index = this.indexes.get(this.indexes.length - 1);
         if(new_index < 0 && this.indexes.length)
         {
-            this.indexes.set(this.indexes.length - 1, screen_len - new_index);
+            this.indexes.set(this.indexes.length - 1, screen_len + new_index);
         }
         else if(new_index > screen_len && this.indexes.length)
         {
@@ -112,6 +112,12 @@ class Snake {
         {
             this.non_background_color_map.set(this.head_pos, {color:this.game.get_place(this.head_pos)!, count:1});
         }
+        if(game.is_food_here(this.head_pos))
+        {
+            this.game.food.forEach(food => {this.try_eat(food)});
+            if(this.game.ai && this.game.gen_heat_map)
+                this.game.update_map();
+        }
         game.add_snake_piece(this.head_pos);
         return true;
     }
@@ -121,12 +127,13 @@ class Snake {
         {
             this.game.score++;
             this.game.updates_per_second += this.game.ai ? .8 : 0.2;
-            this.indexes.push(this.indexes.get(0));
-            if(this.non_background_color_map.has(this.indexes.get(0)))
+            const index = this.indexes.length - 1;
+            this.indexes.push(this.indexes.get(index));
+            if(this.non_background_color_map.has(this.indexes.get(index)))
             {
-                this.non_background_color_map.get(this.indexes.get(0))!.count++;
+                this.non_background_color_map.get(this.indexes.get(index))!.count++;
             }
-            this.game.food.reposition(this.game);
+            food.reposition(this.game);
             return true;
         }
         return false;
@@ -146,7 +153,7 @@ class Food {
     }
     reposition(game:Game):void
     {
-        while(game.is_snake_here(this.index) || game.is_boundary(this.index))
+        while(game.is_snake_here(this.index) || game.is_boundary(this.index) || game.is_food_here(this.index))
         {
             this.index = Math.floor(game.screen_buf.width * game.screen_buf.height * Math.random());
         }
@@ -156,7 +163,7 @@ class Food {
 class Game extends SquareAABBCollidable {
     screen_buf:Sprite;
     snake:Snake;
-    food:Food;
+    food:Food[];
     starting_lives:number;
     lives:number;
     score:number;
@@ -175,6 +182,7 @@ class Game extends SquareAABBCollidable {
     initial_updates_per_second:number;
     GuiFileOpener:GuiButtonFileOpener;
     GuiFileSaver:GuiButton;
+    GuiTBFileName:GuiTextBox;
     GuiManager:SimpleGridLayoutManager;
     constructor(starting_lives:number, x:number, y:number, width:number, height:number)
     {
@@ -185,11 +193,13 @@ class Game extends SquareAABBCollidable {
         this.ai = true;
         this.GuiFileOpener = new GuiButtonFileOpener((binary) => this.load_binary(binary), "Load Boundary Map", 250, 50, 20);
 
-        this.GuiFileSaver = new GuiButton(() => this.save_as("boundary_map_snake.bmap"), "Save Boundary Map", 250, 50, 20);
-
-        this.GuiManager = new SimpleGridLayoutManager([2, 1], [this.GuiFileOpener.width() * 2, this.GuiFileOpener.height()], 0, this.height);
+        this.GuiFileSaver = new GuiButton(() => this.save_as(this.GuiTBFileName.text), "Save Boundary Map", 250, 50, 20);
+        this.GuiTBFileName = new GuiTextBox(true, 350, this.GuiFileSaver, 20, this.GuiFileOpener.height());
+        this.GuiTBFileName.setText("boundary_map_snake.bmap");
+        this.GuiManager = new SimpleGridLayoutManager([300, 1], [this.GuiFileOpener.width() * 3 + this.GuiTBFileName.width(), this.GuiFileOpener.height()], 0, this.height);
         this.GuiManager.addElement(this.GuiFileOpener);
         this.GuiManager.addElement(this.GuiFileSaver);
+        this.GuiManager.addElement(this.GuiTBFileName);
         this.GuiManager.activate();
         this.boundary_color = new RGB(140, 20, 200, 255);
         this.initial_updates_per_second = window.rough_dim ? 300 : 10;
@@ -254,12 +264,17 @@ class Game extends SquareAABBCollidable {
     }
     is_background_or_food_or_snake(index:number):boolean
     {
-        return this.is_background(index) || this.is_snake_here(index) || this.food.index === index;
+        return this.is_background(index) || this.is_snake_here(index) || this.is_food_here(index);
     }
     is_background(index:number):boolean
     {
         const view = new Int32Array(this.screen_buf.imageData!.data.buffer);
         return this.get_place(index) == this.background_color.color;
+    }
+    is_food_here(index:number):boolean
+    {
+        const view = new Int32Array(this.screen_buf.imageData!.data.buffer);
+        return this.get_place(index) == this.food[0].color.color;
     }
     is_boundary(index:number):boolean
     {
@@ -309,16 +324,19 @@ class Game extends SquareAABBCollidable {
             const view_new = new Int32Array(this.screen_buf.imageData!.data.buffer);
             for(let i = 0; i < view.length; i++)
             {
-                if(!(view[i] == this.background_color.color || view[i] == this.snake.color.color || this.food.index == i))
+                if(!(view[i] == this.background_color.color || view[i] == this.snake.color.color))
                     view_new[i] = view[i];
             }
             this.screen_buf.refreshImage();
         }
-        this.food = new Food(Math.floor(this.screen_buf.width * this.screen_buf.height * random()), new RGB(255, 0, 0, 255));   
+        if(this.food)
+            this.food.forEach(food => this.clear_place(food.index));
+        this.food = [];
+        for(let i = 0; i < (window.rough_dim ? 10 : 2); i++)
+            this.food.push(new Food(Math.floor(this.screen_buf.width * this.screen_buf.height * random()), new RGB(255, 0, 0, 255))); 
         this.snake = new Snake(this, 2, Math.floor(cell_width / 2) + Math.floor(cell_height / 2) * cell_width);
         this.snake.init_snake();
-
-        this.food.reposition(this);
+        this.food.forEach(food => food.reposition(this));
     }
     resize(width:number, height:number):void
     {
@@ -372,7 +390,7 @@ class Game extends SquareAABBCollidable {
             let iterations = 0;
             const max_it = Math.max(this.screen_buf.width, this.screen_buf.height) * 20;
             const black = new RGB(0, 0, 0, 255);
-            while(current !== this.food.index && iterations < max_it)
+            while(!this.is_food_here(current) && iterations < max_it)
             {
                 view[current] = black.color;
                 current = this.path_map[current];
@@ -441,7 +459,7 @@ class Game extends SquareAABBCollidable {
     calc_weight(origin:number, current:number):number
     {
         const cdist = this.cell_dist(current, this.snake.head_pos);
-        return cdist;
+        return (cdist);
     }
     column(cell):number
     {
@@ -451,14 +469,14 @@ class Game extends SquareAABBCollidable {
     {
         return Math.floor(cell / this.screen_buf.width);
     }
-    update_map(start:number = this.food.index):void
+    update_map():void
     {
         const view = new Int32Array(this.screen_buf.imageData!.data.buffer);
         const heat_map = new Int32Array(this.heat_map.imageData!.data.buffer);
         const queue:PriorityQueue<number> = new PriorityQueue<number>((a:number, b:number) => {
             return this.cost_map[a] - this.cost_map[b];
         });
-        queue.push(start);
+        this.food.forEach(food => queue.push(food.index));
         this.cost_map.fill(0, 0, this.cost_map.length);
         let max_cost = 1;
         let snake_parts_found = 0;
@@ -467,7 +485,7 @@ class Game extends SquareAABBCollidable {
         while(queue.data.length > 0 && cell !== undefined)
         {
             cell = queue.pop()!;
-            if(view[cell] == this.background_color.color || view[cell] == this.food.color.color)
+            if(view[cell] == this.background_color.color || view[cell] == this.food[0].color.color)
             {
                 if(this.cost_map[cell] > max_cost)
                 {
@@ -516,9 +534,9 @@ class Game extends SquareAABBCollidable {
         {
             const bias = this.cost_map[i] == 0 ? 255 : 0;
             const clamped_cost = this.cost_map[i] / max_cost * 255;
-            const blender2 = new RGB(clamped_cost, bias === 0 ? 255 - clamped_cost : 0, Math.abs(clamped_cost - bias), 160);
+            const blender2 = new RGB(256 - clamped_cost, 0, bias === 0 ? 256 - clamped_cost/2 : 0, 160);
             
-            if(i !== this.food.index)
+            if(!this.is_food_here(i))
                 heat_map[i] = blender2.color;
         }
         
@@ -558,9 +576,6 @@ class Game extends SquareAABBCollidable {
                         {
                             this.restart_game();
                         }
-                        const eaten = this.snake.try_eat(this.food);
-                        if(this.gen_heat_map && eaten)
-                            this.update_map();
                     }
                     if(this.gen_heat_map && this.ai)
                         this.update_map();
