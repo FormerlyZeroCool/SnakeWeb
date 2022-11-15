@@ -250,7 +250,7 @@ class Game extends SquareAABBCollidable {
         if (this.food)
             this.food.forEach(food => this.clear_place(food.index));
         this.food = [];
-        for (let i = 0; i < (window.rough_dim ? 30 : 1); i++)
+        for (let i = 0; i < (window.rough_dim ? 15 : 1); i++)
             this.food.push(new Food(Math.floor(this.screen_buf.width * this.screen_buf.height * random()), new RGB(255, 0, 0, 255)));
         this.snake = new Snake(this, 2, Math.floor(cell_width / 2) + Math.floor(cell_height / 2) * cell_width);
         this.snake.init_snake();
