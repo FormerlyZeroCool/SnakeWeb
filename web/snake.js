@@ -255,6 +255,7 @@ class Game extends SquareAABBCollidable {
         this.snake = new Snake(this, 2, Math.floor(cell_width / 2) + Math.floor(cell_height / 2) * cell_width);
         this.snake.init_snake();
         this.food.forEach(food => food.reposition(this));
+        this.update_map();
     }
     resize(width, height) {
         this.width = width;
