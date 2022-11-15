@@ -379,7 +379,7 @@ class Game extends SquareAABBCollidable {
         this.cost_map.fill(this.background_color.color, 0, this.cost_map.length);
         this.food.forEach(food => {
             queue.push(food.index);
-            this.cost_map[food.index] = this.calc_weight(food.index, food.index);
+            //this.cost_map[food.index] = this.calc_weight(food.index, food.index);
         });
         let max_cost = 1;
         let snake_parts_found = 0;
