@@ -548,7 +548,8 @@ async function main() {
     touchListener.registerCallBack("touchend", (event) => !(keyboardHandler.keysHeld["KeyB"]), (event) => {
         if (touchListener.timeSinceLastTouch < 200) {
             game.ai = !game.ai;
-            game.update_map();
+            if (!game.gen_heat_map)
+                game.update_map();
         }
         game.GuiManager.handleTouchEvents("touchend", event);
     });
