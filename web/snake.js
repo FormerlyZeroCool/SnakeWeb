@@ -295,7 +295,7 @@ class Game extends SquareAABBCollidable {
     }
     draw(canvas, ctx, x, y, width, height) {
         const buf = this.heat_map;
-        const view = new Uint32Array(buf.imageData.data.buffer);
+        const view = new Int32Array(buf.imageData.data.buffer);
         ctx.imageSmoothingEnabled = false;
         if (this.ai) {
             let current = this.snake.head_pos;
@@ -376,8 +376,11 @@ class Game extends SquareAABBCollidable {
         const queue = new PriorityQueue((a, b) => {
             return this.cost_map[a] - this.cost_map[b];
         });
-        this.food.forEach(food => queue.push(food.index));
-        this.cost_map.fill(0, 0, this.cost_map.length);
+        this.cost_map.fill(this.background_color.color, 0, this.cost_map.length);
+        this.food.forEach(food => {
+            queue.push(food.index);
+            this.cost_map[food.index] = this.calc_weight(food.index, food.index);
+        });
         let max_cost = 1;
         let snake_parts_found = 0;
         let head_found = false;
@@ -431,7 +434,7 @@ class Game extends SquareAABBCollidable {
     update_state(delta_time) {
         const dt = Date.now() - this.last_update;
         if (dt > 1000 / this.updates_per_second) {
-            if (dt > 25)
+            if (dt > 75)
                 this.gen_heat_map = false;
             this.last_update = Date.now();
             if (!this.paused) {
