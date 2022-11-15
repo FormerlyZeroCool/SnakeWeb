@@ -115,10 +115,14 @@ class Snake {
         if(game.is_food_here(this.head_pos))
         {
             this.game.food.forEach(food => {this.try_eat(food)});
-            if(this.game.ai && this.game.gen_heat_map)
+            game.add_snake_piece(this.head_pos);
+            if(this.game.ai)
                 this.game.update_map();
         }
-        game.add_snake_piece(this.head_pos);
+        else
+        {
+            game.add_snake_piece(this.head_pos);
+        }
         return true;
     }
     try_eat(food:Food):boolean
@@ -385,7 +389,7 @@ class Game extends SquareAABBCollidable {
         const buf = this.heat_map;
         const view = new Uint32Array(buf.imageData!.data.buffer);
         ctx.imageSmoothingEnabled = false;
-        if(this.ai && this.gen_heat_map){
+        if(this.ai){
             let current = this.snake.head_pos;
             let iterations = 0;
             const max_it = Math.max(this.screen_buf.width, this.screen_buf.height) * 20;
