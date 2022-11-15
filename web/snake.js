@@ -431,6 +431,8 @@ class Game extends SquareAABBCollidable {
     update_state(delta_time) {
         const dt = Date.now() - this.last_update;
         if (dt > 1000 / this.updates_per_second) {
+            if (dt > 25)
+                this.gen_heat_map = false;
             this.last_update = Date.now();
             if (!this.paused) {
                 const runs = Math.floor(dt / (1000 / this.updates_per_second));
