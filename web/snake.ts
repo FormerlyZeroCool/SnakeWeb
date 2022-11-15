@@ -690,7 +690,10 @@ async function main()
        game.GuiManager.handleTouchEvents("touchstart", event);
     });
     touchListener.registerCallBack("touchend", (event:any) => !(keyboardHandler.keysHeld["KeyB"]), (event:TouchMoveEvent) => {
-       game.ai = (touchListener.timeSinceLastTouch < 200);
+        if(touchListener.timeSinceLastTouch < 200){
+        game.ai = !game.ai;
+        game.update_map();
+    }
        game.GuiManager.handleTouchEvents("touchend", event);
     });
     touchListener.registerCallBack("touchmove", (event:any) => true, (event:TouchMoveEvent) => {
