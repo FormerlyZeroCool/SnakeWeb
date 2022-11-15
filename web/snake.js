@@ -370,6 +370,45 @@ class Game extends SquareAABBCollidable {
     row(cell) {
         return Math.floor(cell / this.screen_buf.width);
     }
+    screen_to_index(x, y) {
+        const x_scale = 1 / this.width * this.screen_buf.width;
+        const y_scale = 1 / this.height * this.screen_buf.height;
+        x *= x_scale;
+        y *= y_scale;
+        return Math.floor(x) + Math.floor(y) * this.screen_buf.width;
+    }
+    fill(start, color_p) {
+        //const view:Int32Array = new Int32Array(this.screen_buf.imageData!.data.buffer);
+        //const start_color = view[start];
+        console.log("trying to fill");
+        this.traverse_df(start, (index, color) => color_p, (index, color) => color == this.background_color.color);
+    }
+    traverse_df(start, apply, verifier) {
+        const view = new Int32Array(this.screen_buf.imageData.data.buffer);
+        const checked_map = new Int32Array(view.length);
+        checked_map.fill(0, 0, checked_map.length);
+        const stack = [];
+        stack.push(start);
+        while (stack.length > 0) {
+            const current = stack.pop();
+            if (!checked_map[current] && verifier(current, view[current])) {
+                checked_map[current] = 1;
+                view[current] = apply(current, view[current]);
+                if (checked_map[current + 1] === 0 && this.row(current + 1) === this.row(current) && view[current + 1] !== undefined) {
+                    stack.push(current + 1);
+                }
+                if (checked_map[current - 1] === 0 && this.row(current - 1) === this.row(current) && view[current - 1] !== undefined) {
+                    stack.push(current - 1);
+                }
+                if (checked_map[current + this.screen_buf.width] === 0 && this.column(current + this.screen_buf.width) === this.column(current) && view[current + this.screen_buf.width] !== undefined) {
+                    stack.push(current + this.screen_buf.width);
+                }
+                if (checked_map[current - this.screen_buf.width] === 0 && this.column(current - this.screen_buf.width) === this.column(current) && view[current - this.screen_buf.width] !== undefined) {
+                    stack.push(current - this.screen_buf.width);
+                }
+            }
+        }
+    }
     update_map() {
         const view = new Int32Array(this.screen_buf.imageData.data.buffer);
         const heat_map = new Int32Array(this.heat_map.imageData.data.buffer);
@@ -546,6 +585,9 @@ async function main() {
         game.GuiManager.handleTouchEvents("touchstart", event);
     });
     touchListener.registerCallBack("touchend", (event) => !(keyboardHandler.keysHeld["KeyB"]), (event) => {
+        if ((touchListener.timeSinceLastTouch < 200 || keyboardHandler.keysHeld["KeyB"]) && Date.now() - touchListener.startTouchTime > 1500) {
+            game.fill(game.screen_to_index(event.touchPos[0], event.touchPos[1]), game.boundary_color.color);
+        }
         if (touchListener.timeSinceLastTouch < 200) {
             game.ai = !game.ai;
             if (!game.gen_heat_map)

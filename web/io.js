@@ -83,8 +83,8 @@ export class MouseDownTracker {
 }
 export class SingleTouchListener {
     constructor(component, preventDefault, mouseEmulation, stopRightClick = false) {
-        this.lastTouchTime = Date.now();
-        this.timeSinceLastTouch = Date.now() - this.lastTouchTime;
+        this.startTouchTime = Date.now();
+        this.timeSinceLastTouch = Date.now() - this.startTouchTime;
         this.offset = [];
         this.moveCount = 0;
         this.touchMoveEvents = [];
@@ -143,11 +143,11 @@ export class SingleTouchListener {
             });
     }
     touchStartHandler(event) {
-        this.timeSinceLastTouch = Date.now() - this.lastTouchTime;
+        this.timeSinceLastTouch = Date.now() - this.startTouchTime;
         this.registeredTouch = true;
         this.moveCount = 0;
-        event.timeSinceLastTouch = Date.now() - (this.lastTouchTime ? this.lastTouchTime : 0);
-        this.lastTouchTime = Date.now();
+        event.timeSinceLastTouch = Date.now() - (this.startTouchTime ? this.startTouchTime : 0);
+        this.startTouchTime = Date.now();
         this.touchStart = event.changedTouches.item(0);
         this.touchPos = [this.touchStart["offsetX"], this.touchStart["offsetY"]];
         if (!this.touchPos[0]) {
@@ -197,7 +197,7 @@ export class SingleTouchListener {
             const mag = this.mag([deltaX, deltaY]);
             this.touchMoveCount++;
             this.deltaTouchPos += Math.abs(mag);
-            this.touchVelocity = 100 * this.deltaTouchPos / (Date.now() - this.lastTouchTime);
+            this.touchVelocity = 100 * this.deltaTouchPos / (Date.now() - this.startTouchTime);
             const a = this.normalize([deltaX, deltaY]);
             const b = [1, 0];
             const dotProduct = this.dotProduct(a, b);
@@ -209,7 +209,7 @@ export class SingleTouchListener {
             event.angle = angle;
             event.avgVelocity = this.touchVelocity;
             event.touchPos = this.touchPos ? [this.touchPos[0], this.touchPos[1]] : [0, 0];
-            event.startTouchTime = this.lastTouchTime;
+            event.startTouchTime = this.startTouchTime;
             event.eventTime = Date.now();
             event.moveCount = this.moveCount;
             event.translateEvent = this.translateEvent;
@@ -242,8 +242,8 @@ export class SingleTouchListener {
                 const b = [1, 0];
                 const dotProduct = this.dotProduct(a, b);
                 const angle = Math.acos(dotProduct) * (180 / Math.PI) * (deltaY < 0 ? 1 : -1);
-                const delay = Date.now() - this.lastTouchTime; // from start tap to finish
-                this.touchVelocity = 100 * mag / (Date.now() - this.lastTouchTime);
+                const delay = Date.now() - this.startTouchTime; // from start tap to finish
+                this.touchVelocity = 100 * mag / (Date.now() - this.startTouchTime);
                 event.deltaX = deltaX;
                 event.deltaY = deltaY;
                 event.mag = mag;
@@ -251,7 +251,7 @@ export class SingleTouchListener {
                 event.avgVelocity = this.touchVelocity;
                 event.touchPos = this.touchPos ? [this.touchPos[0], this.touchPos[1]] : [0, 0];
                 event.timeDelayFromStartToEnd = delay;
-                event.startTouchTime = this.lastTouchTime;
+                event.startTouchTime = this.startTouchTime;
                 event.eventTime = Date.now();
                 event.moveCount = this.moveCount;
                 event.translateEvent = this.translateEvent;

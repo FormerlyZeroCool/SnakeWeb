@@ -475,6 +475,57 @@ class Game extends SquareAABBCollidable {
     {
         return Math.floor(cell / this.screen_buf.width);
     }
+    screen_to_index(x:number, y:number):number
+    {
+        const x_scale = 1 / this.width * this.screen_buf.width;
+        const y_scale = 1 / this.height * this.screen_buf.height;
+        x *= x_scale;
+        y *= y_scale;
+        return Math.floor(x) + Math.floor(y) * this.screen_buf.width;
+    }
+    fill(start:number, color_p:number):void
+    {
+        //const view:Int32Array = new Int32Array(this.screen_buf.imageData!.data.buffer);
+        //const start_color = view[start];
+        console.log("trying to fill")
+        this.traverse_df(start, 
+            (index, color) => color_p, 
+                (index, color) => color == this.background_color.color);
+    }
+    traverse_df(start:number, apply:(index:number, color:number) => number, verifier:(index:number, color:number) => boolean):void
+    {
+        const view:Int32Array = new Int32Array(this.screen_buf.imageData!.data.buffer);
+        const checked_map:Int32Array = new Int32Array(view.length);
+        checked_map.fill(0, 0, checked_map.length);
+        const stack:number[] = [];
+        stack.push(start);
+        while(stack.length > 0)
+        {
+            const current = stack.pop()!;
+            if(!checked_map[current] && verifier(current, view[current]))
+            {
+                checked_map[current] = 1;
+                view[current] = apply(current, view[current]);
+                
+                if(checked_map[current + 1] === 0  && this.row(current + 1) === this.row(current) && view[current + 1] !== undefined)
+                {
+                    stack.push(current + 1);
+                }
+                if(checked_map[current - 1] === 0  && this.row(current - 1) === this.row(current) && view[current - 1] !== undefined)
+                {
+                    stack.push(current - 1);
+                }
+                if(checked_map[current + this.screen_buf.width] === 0 && this.column(current + this.screen_buf.width) === this.column(current) && view[current + this.screen_buf.width] !== undefined)
+                {
+                    stack.push(current + this.screen_buf.width);
+                }
+                if(checked_map[current - this.screen_buf.width] === 0 && this.column(current - this.screen_buf.width) === this.column(current) && view[current - this.screen_buf.width] !== undefined)
+                {
+                    stack.push(current - this.screen_buf.width);
+                }
+            }
+        }
+    }
     update_map():void
     {
         const view = new Int32Array(this.screen_buf.imageData!.data.buffer);
@@ -690,11 +741,15 @@ async function main()
        game.GuiManager.handleTouchEvents("touchstart", event);
     });
     touchListener.registerCallBack("touchend", (event:any) => !(keyboardHandler.keysHeld["KeyB"]), (event:TouchMoveEvent) => {
+        if((touchListener.timeSinceLastTouch < 200 || keyboardHandler.keysHeld["KeyB"]) && Date.now() - touchListener.startTouchTime > 1500)
+        {
+            game.fill(game.screen_to_index(event.touchPos[0], event.touchPos[1]), game.boundary_color.color);
+        }
         if(touchListener.timeSinceLastTouch < 200){
-        game.ai = !game.ai;
-        if(!game.gen_heat_map)
-            game.update_map();
-    }
+            game.ai = !game.ai;
+            if(!game.gen_heat_map)
+                game.update_map();
+        }
        game.GuiManager.handleTouchEvents("touchend", event);
     });
     touchListener.registerCallBack("touchmove", (event:any) => true, (event:TouchMoveEvent) => {
