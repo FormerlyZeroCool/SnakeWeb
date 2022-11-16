@@ -2657,23 +2657,35 @@ export class SpriteAnimation {
         }
     }
 };
+let width:number = Math.min(
+    document.body.scrollWidth,
+    document.documentElement.scrollWidth,
+    document.body.offsetWidth,
+    document.documentElement.offsetWidth,
+    document.documentElement.clientWidth
+  );
+let height:number = Math.min(
+    //document.body.scrollHeight,
+    //document.documentElement.scrollHeight,
+    //document.body.offsetHeight,
+    //document.documentElement.offsetHeight//,
+    document.body.clientHeight
+  );
+window.addEventListener("resize", () => {
+    width = Math.min(
+        document.body.scrollWidth,
+        document.documentElement.scrollWidth,
+        document.body.offsetWidth,
+        document.documentElement.offsetWidth,
+        document.body.clientWidth
+      );
+    height = document.documentElement.clientHeight;
+});
 export function getWidth():number {
-    return Math.min(
-      document.body.scrollWidth,
-      document.documentElement.scrollWidth,
-      document.body.offsetWidth,
-      document.documentElement.offsetWidth,
-      document.documentElement.clientWidth
-    );
+    return width;
 }
 export function getHeight():number {
-      return Math.min(
-        //document.body.scrollHeight,
-        //document.documentElement.scrollHeight,
-        //document.body.offsetHeight,
-        //document.documentElement.offsetHeight//,
-        document.documentElement.clientHeight
-      );
+    return height;
 }
 export class RegularPolygon {
     points:number[];

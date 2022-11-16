@@ -2131,16 +2131,22 @@ export class SpriteAnimation {
     }
 }
 ;
+let width = Math.min(document.body.scrollWidth, document.documentElement.scrollWidth, document.body.offsetWidth, document.documentElement.offsetWidth, document.documentElement.clientWidth);
+let height = Math.min(
+//document.body.scrollHeight,
+//document.documentElement.scrollHeight,
+//document.body.offsetHeight,
+//document.documentElement.offsetHeight//,
+document.body.clientHeight);
+window.addEventListener("resize", () => {
+    width = Math.min(document.body.scrollWidth, document.documentElement.scrollWidth, document.body.offsetWidth, document.documentElement.offsetWidth, document.body.clientWidth);
+    height = document.documentElement.clientHeight;
+});
 export function getWidth() {
-    return Math.min(document.body.scrollWidth, document.documentElement.scrollWidth, document.body.offsetWidth, document.documentElement.offsetWidth, document.documentElement.clientWidth);
+    return width;
 }
 export function getHeight() {
-    return Math.min(
-    //document.body.scrollHeight,
-    //document.documentElement.scrollHeight,
-    //document.body.offsetHeight,
-    //document.documentElement.offsetHeight//,
-    document.documentElement.clientHeight);
+    return height;
 }
 export class RegularPolygon {
     constructor(radius, sides) {
