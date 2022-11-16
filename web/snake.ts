@@ -747,6 +747,7 @@ async function main()
         }
         if(touchListener.timeSinceLastTouch < 200){
             game.ai = !game.ai;
+            game.gen_heat_map = game.ai;
             if(!game.gen_heat_map)
                 game.update_map();
         }
