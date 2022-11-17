@@ -2140,7 +2140,7 @@ let height = Math.min(
 document.body.clientHeight);
 window.addEventListener("resize", () => {
     width = Math.min(document.body.scrollWidth, document.documentElement.scrollWidth, document.body.offsetWidth, document.documentElement.offsetWidth, document.body.clientWidth);
-    height = document.documentElement.clientHeight;
+    height = document.body.clientHeight;
 });
 export function getWidth() {
     return width;

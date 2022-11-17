@@ -2679,7 +2679,7 @@ window.addEventListener("resize", () => {
         document.documentElement.offsetWidth,
         document.body.clientWidth
       );
-    height = document.documentElement.clientHeight;
+    height = document.body.clientHeight;
 });
 export function getWidth():number {
     return width;
