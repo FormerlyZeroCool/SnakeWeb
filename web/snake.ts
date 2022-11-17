@@ -837,11 +837,11 @@ async function main()
     {
         frame_count++;
         //do stuff and render here
-        if(getWidth() !== width)
+        if(getWidth() !== width || getHeight() !== height)
         {
             width = getWidth();
-            height = getHeight() - header!.clientHeight - 150;
-            game.resize(width, height);
+            height = getHeight();
+            game.resize(width, height - 100);
             canvas.width = width;
             canvas.height = height;
         }
@@ -874,7 +874,7 @@ async function main()
         requestAnimationFrame(drawLoop);
     }
     drawLoop();
-    game.resize(width, height - header!.clientHeight - 150);
+    game.resize(width, height - header!.clientHeight - 100);
 
 }
 main();
