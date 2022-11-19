@@ -499,7 +499,7 @@ class Game extends SquareAABBCollidable {
                             this.restart_game();
                         }
                     }
-                    if (this.gen_heat_map && this.ai)
+                    if (this.gen_heat_map)
                         this.update_map();
                     if (this.score > this.high_score)
                         this.high_score = this.score;
