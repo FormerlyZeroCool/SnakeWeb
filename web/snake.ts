@@ -606,8 +606,6 @@ class Game extends SquareAABBCollidable {
         const dt = Date.now() - this.last_update;
         if(dt > 1000 / this.updates_per_second)
         {
-            if(dt > 75)
-                this.gen_heat_map = false;
             this.last_update = Date.now();
             if(!this.paused)
             {
