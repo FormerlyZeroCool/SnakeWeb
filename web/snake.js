@@ -250,7 +250,7 @@ class Game extends SquareAABBCollidable {
         if (this.food)
             this.food.forEach(food => this.clear_place(food.index));
         this.food = [];
-        for (let i = 0; i < (window.rough_dim ? 15 : 1); i++)
+        for (let i = 0; i < (window.rough_dim ? 15 : 2); i++)
             this.food.push(new Food(Math.floor(this.screen_buf.width * this.screen_buf.height * random()), new RGB(255, 0, 0, 255)));
         this.snake = new Snake(this, 2, Math.floor(cell_width / 2) + Math.floor(cell_height / 2) * cell_width);
         this.snake.init_snake();
@@ -362,7 +362,7 @@ class Game extends SquareAABBCollidable {
     }
     calc_weight(origin, current) {
         const cdist = this.cell_dist(current, this.snake.head_pos);
-        return (cdist);
+        return this.cost_map[origin] + (cdist * cdist * cdist);
     }
     column(cell) {
         return cell % this.screen_buf.width;
@@ -473,8 +473,6 @@ class Game extends SquareAABBCollidable {
     update_state(delta_time) {
         const dt = Date.now() - this.last_update;
         if (dt > 1000 / this.updates_per_second) {
-            if (dt > 75)
-                this.gen_heat_map = false;
             this.last_update = Date.now();
             if (!this.paused) {
                 const runs = Math.floor(dt / (1000 / this.updates_per_second));
