@@ -336,7 +336,7 @@ class Game extends SquareAABBCollidable {
         if(this.food)
             this.food.forEach(food => this.clear_place(food.index));
         this.food = [];
-        for(let i = 0; i < (window.rough_dim ? 15 : 2); i++)
+        for(let i = 0; i < (window.rough_dim ? 35 : 4); i++)
             this.food.push(new Food(Math.floor(this.screen_buf.width * this.screen_buf.height * random()), new RGB(255, 0, 0, 255))); 
         this.snake = new Snake(this, 2, Math.floor(cell_width / 2) + Math.floor(cell_height / 2) * cell_width);
         this.snake.init_snake();
@@ -465,7 +465,7 @@ class Game extends SquareAABBCollidable {
     calc_weight(origin:number, current:number):number
     {
         const cdist = this.cell_dist(current, this.snake.head_pos);
-        return this.cost_map[origin] + (cdist * cdist * cdist);
+        return this.cost_map[origin] + (cdist);
     }
     column(cell):number
     {
@@ -530,9 +530,7 @@ class Game extends SquareAABBCollidable {
     {
         const view = new Int32Array(this.screen_buf.imageData!.data.buffer);
         const heat_map = new Int32Array(this.heat_map.imageData!.data.buffer);
-        const queue:PriorityQueue<number> = new PriorityQueue<number>((a:number, b:number) => {
-            return this.cost_map[a] - this.cost_map[b];
-        });
+        const queue:Queue<number> = new Queue<number>();
         this.cost_map.fill(this.background_color.color, 0, this.cost_map.length);
         this.food.forEach(food => {
             queue.push(food.index);
@@ -542,7 +540,7 @@ class Game extends SquareAABBCollidable {
         let snake_parts_found = 0;
         let head_found = false;
         let cell = 0;
-        while(queue.data.length > 0 && cell !== undefined)
+        while(queue.length > 0 && cell !== undefined)
         {
             cell = queue.pop()!;
             if(view[cell] == this.background_color.color || view[cell] == this.food[0].color.color)
@@ -584,7 +582,7 @@ class Game extends SquareAABBCollidable {
                     snake_parts_found++;
                     if(this.snake.head_pos == cell)
                     {
-                        queue.clear();
+                        //queue.clear();
                     }
                 }
             }
