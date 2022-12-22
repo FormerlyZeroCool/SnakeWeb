@@ -217,7 +217,7 @@ class Game extends SquareAABBCollidable {
         const higher_dim = Math.max(rough_dim, Math.floor(rough_dim * whratio));
         if(higher_dim > 400)
         {
-            this.init(width, height, 300, 400);
+            this.init(width, height, 150, 300);
 
         }
         else
