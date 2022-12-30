@@ -218,7 +218,6 @@ class Game extends SquareAABBCollidable {
         if(higher_dim > 400)
         {
             this.init(width, height, 150, 300);
-
         }
         else
             this.init(width, height, rough_dim, Math.floor(rough_dim * whratio));
@@ -472,7 +471,7 @@ class Game extends SquareAABBCollidable {
     calc_weight(origin:number, current:number):number
     {
         const cdist = this.cell_dist(current, this.snake.head_pos);
-        return this.cost_map[origin] + (cdist);
+        return this.cost_map[origin] + (1);
     }
     column(cell):number
     {
@@ -881,8 +880,3 @@ async function main()
 
 }
 main();
-
-
-
-
-
