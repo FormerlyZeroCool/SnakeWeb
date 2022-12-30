@@ -366,7 +366,7 @@ class Game extends SquareAABBCollidable {
         return view[cell] == this.snake.color.color;
     }
     calc_weight(origin, current) {
-        const cdist = this.cell_dist(current, this.snake.head_pos);
+        //const cdist = this.cell_dist(current, this.snake.head_pos);
         return this.cost_map[origin] + (1);
     }
     column(cell) {

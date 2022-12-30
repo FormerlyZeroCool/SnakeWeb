@@ -470,7 +470,7 @@ class Game extends SquareAABBCollidable {
     }
     calc_weight(origin:number, current:number):number
     {
-        const cdist = this.cell_dist(current, this.snake.head_pos);
+        //const cdist = this.cell_dist(current, this.snake.head_pos);
         return this.cost_map[origin] + (1);
     }
     column(cell):number
