@@ -52,8 +52,9 @@ class Snake {
         //if(this.direction)
         return false;
     }
-    move(game:Game):boolean
+    remove_tail(game:Game):void
     {
+
         const removed = this.indexes.pop();
         //manage map that stores what lies under the snake
         if(this.non_background_color_map.has(removed))
@@ -69,6 +70,9 @@ class Snake {
         }
         else
             game.clear_place(removed);
+    }
+    move(game:Game):boolean
+    {
         if(this.direction[0] > 0)
         {
             const new_piece_index = this.head_pos + 1;
@@ -121,6 +125,7 @@ class Snake {
         }
         else
         {
+            this.remove_tail(game);
             game.add_snake_piece(this.head_pos);
         }
         return true;
@@ -131,12 +136,6 @@ class Snake {
         {
             this.game.score++;
             this.game.updates_per_second += this.game.ai ? .8 : 0.2;
-            const index = this.indexes.length - 1;
-            this.indexes.push(this.indexes.get(index));
-            if(this.non_background_color_map.has(this.indexes.get(index)))
-            {
-                this.non_background_color_map.get(this.indexes.get(index))!.count++;
-            }
             food.reposition(this.game);
             return true;
         }
@@ -206,7 +205,7 @@ class Game extends SquareAABBCollidable {
         this.GuiManager.addElement(this.GuiTBFileName);
         this.GuiManager.activate();
         this.boundary_color = new RGB(140, 20, 200, 255);
-        this.initial_updates_per_second = window.rough_dim ? 300 : 10;
+        this.initial_updates_per_second = window.rough_dim ? 300 : 5;
         this.updates_per_second = this.initial_updates_per_second;
         this.score = 0;
         this.high_score = 0;
