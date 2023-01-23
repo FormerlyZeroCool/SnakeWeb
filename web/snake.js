@@ -5,6 +5,7 @@ import { menu_font_size, SquareAABBCollidable } from './game_utils.js';
 class Snake {
     constructor(game, initial_len, head_pos) {
         this.game = game;
+        this.last_move_time = 0;
         this.init(initial_len, head_pos);
     }
     init(initial_len, head_pos) {
@@ -96,6 +97,7 @@ class Snake {
             this.remove_tail(game);
             game.add_snake_piece(this.head_pos);
         }
+        this.last_move_time = Date.now();
         return true;
     }
     try_eat(food) {
@@ -115,13 +117,32 @@ class Snake {
 class Food {
     constructor(index, color) {
         this.index = index;
-        this.color = color;
+        Food.color = color;
     }
     reposition(game) {
-        while (game.is_snake_here(this.index) || game.is_boundary(this.index) || game.is_food_here(this.index)) {
+        let count = 0;
+        const limit = 1000;
+        while (count < limit && (game.is_snake_here(this.index) || game.is_boundary(this.index) || game.is_food_here(this.index))) {
             this.index = Math.floor(game.screen_buf.width * game.screen_buf.height * Math.random());
+            count++;
         }
-        game.add_place(this.index, this.color.color);
+        //tried 1000 times randomly guessing now to narrow the range of the mapping to only the 
+        //remaining free spaces 
+        //we avoid doing this because it is expensive to add an allocation for the gc to manage so 
+        //we try the above algo of randomly guessing within the entire search space ignoring the fact that 
+        //outputs that map to locations in the field where objects are already are invalid which requires no allocation
+        //or extra memory to be managed
+        if (count === limit) {
+            const view = new Int32Array(game.screen_buf.pixels.buffer);
+            const possible_spaces = [];
+            for (let i = 0; i < view.length; i++) {
+                const value = view[i];
+                if (!(game.is_snake_here(value) || game.is_boundary(value) || game.is_food_here(value)))
+                    possible_spaces.push(i);
+            }
+            this.index = possible_spaces[Math.floor(possible_spaces.length * Math.random())];
+        }
+        game.add_place(this.index, Food.color.color);
     }
 }
 ;
@@ -132,6 +153,7 @@ class Game extends SquareAABBCollidable {
         this.gen_heat_map = true;
         this.paused = false;
         this.ai = true;
+        this.move_queue = new Queue();
         this.GuiFileOpener = new GuiButtonFileOpener((binary) => this.load_binary(binary), "Load Boundary Map", 250, 50, 20);
         this.GuiFileSaver = new GuiButton(() => this.save_as(this.GuiTBFileName.text), "Save Boundary Map", 250, 50, 20);
         this.GuiTBFileName = new GuiTextBox(true, 350, this.GuiFileSaver, 20, this.GuiFileOpener.height());
@@ -204,7 +226,7 @@ class Game extends SquareAABBCollidable {
     }
     is_food_here(index) {
         const view = new Int32Array(this.screen_buf.imageData.data.buffer);
-        return this.get_place(index) == this.food[0].color.color;
+        return this.get_place(index) == Food.color.color;
     }
     is_boundary(index) {
         const view = new Int32Array(this.screen_buf.imageData.data.buffer);
@@ -427,7 +449,7 @@ class Game extends SquareAABBCollidable {
         let cell = 0;
         while (queue.length > 0 && cell !== undefined) {
             cell = queue.pop();
-            if (view[cell] == this.background_color.color || view[cell] == this.food[0].color.color) {
+            if (view[cell] == this.background_color.color || view[cell] == Food.color.color) {
                 if (this.cost_map[cell] > max_cost) {
                     max_cost = this.cost_map[cell];
                 }
@@ -473,11 +495,45 @@ class Game extends SquareAABBCollidable {
     }
     update_state(delta_time) {
         const dt = Date.now() - this.last_update;
-        if (dt > 1000 / this.updates_per_second) {
+        while (this.move_queue.length) {
+            const event = this.move_queue.pop();
+            switch (event.code) {
+                case ("KeyA"):
+                    this.ai = !this.ai;
+                    break;
+                case ("KeyP"):
+                    this.paused = !this.paused;
+                    break;
+                case ("KeyG"):
+                    this.gen_heat_map = !this.gen_heat_map;
+                    break;
+                case ("ArrowUp"):
+                    this.move_up();
+                    this.ai = false;
+                    break;
+                case ("ArrowDown"):
+                    this.move_down();
+                    this.ai = false;
+                    break;
+                case ("ArrowLeft"):
+                    this.move_left();
+                    this.ai = false;
+                    break;
+                case ("ArrowRight"):
+                    this.move_right();
+                    this.ai = false;
+                    break;
+            }
+            if ((Date.now() - this.snake.last_move_time) > 1000 / this.updates_per_second &&
+                !this.snake.move(this)) {
+                this.restart_game();
+            }
+        }
+        if ((Date.now() - this.snake.last_move_time) > 1000 / this.updates_per_second && dt > 1000 / this.updates_per_second) {
             this.last_update = Date.now();
             if (!this.paused) {
                 const runs = Math.floor(dt / (1000 / this.updates_per_second));
-                if (runs < 1000) {
+                if (runs < 1000000) {
                     for (let i = 0; i < runs; i++) {
                         this.update_count++;
                         if (this.ai) {
@@ -625,34 +681,11 @@ async function main() {
             !keyboardHandler.keysHeld["MetaRight"] && !keyboardHandler.keysHeld["ControlRight"])
             event.preventDefault();
         switch (event.code) {
-            case ("KeyA"):
-                game.ai = !game.ai;
-                break;
-            case ("KeyP"):
-                game.paused = !game.paused;
-                break;
-            case ("KeyG"):
-                game.gen_heat_map = !game.gen_heat_map;
-                break;
             case ("KeyL"):
                 low_fps = !low_fps;
                 break;
-            case ("ArrowUp"):
-                game.move_up();
-                game.ai = false;
-                break;
-            case ("ArrowDown"):
-                game.move_down();
-                game.ai = false;
-                break;
-            case ("ArrowLeft"):
-                game.move_left();
-                game.ai = false;
-                break;
-            case ("ArrowRight"):
-                game.move_right();
-                game.ai = false;
-                break;
+            default:
+                game.move_queue.push(event);
         }
     });
     let maybectx = canvas.getContext("2d");
