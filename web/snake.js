@@ -533,7 +533,7 @@ class Game extends SquareAABBCollidable {
             this.last_update = Date.now();
             if (!this.paused) {
                 const runs = Math.floor(dt / (1000 / this.updates_per_second));
-                if (runs < 1000000) {
+                if (runs < 10000) {
                     for (let i = 0; i < runs; i++) {
                         this.update_count++;
                         if (this.ai) {
@@ -547,7 +547,7 @@ class Game extends SquareAABBCollidable {
                             else if (to_cell === this.snake.head_pos - this.screen_buf.width)
                                 this.move_up();
                             else {
-                                //this.move_random();
+                                this.move_left();
                             }
                         }
                         if (!this.snake.move(this)) {
