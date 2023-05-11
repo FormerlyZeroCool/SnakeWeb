@@ -387,7 +387,7 @@ class Game extends SquareAABBCollidable {
     }
     calc_weight(origin, current) {
         const cdist = this.cell_dist(current, this.snake.head_pos);
-        return (cdist);
+        return this.cost_map[origin] + (cdist);
     }
     column(cell) {
         return cell % this.screen_buf.width;
@@ -453,22 +453,22 @@ class Game extends SquareAABBCollidable {
                 if (this.cost_map[cell] > max_cost) {
                     max_cost = this.cost_map[cell];
                 }
-                if (this.cost_map[cell + 1] === 0 && this.row(cell + 1) === this.row(cell) && view[cell + 1] !== undefined) {
+                if (this.cost_map[cell + 1] === 0 && this.row(cell + 1) === this.row(cell)) {
                     this.cost_map[cell + 1] = this.calc_weight(cell, cell + 1);
                     this.path_map[cell + 1] = cell;
                     queue.push(cell + 1);
                 }
-                if (this.cost_map[cell - 1] === 0 && this.row(cell - 1) === this.row(cell) && view[cell - 1] !== undefined) {
+                if (this.cost_map[cell - 1] === 0 && this.row(cell - 1) === this.row(cell)) {
                     this.cost_map[cell - 1] = this.calc_weight(cell, cell - 1);
                     this.path_map[cell - 1] = cell;
                     queue.push(cell - 1);
                 }
-                if (this.cost_map[cell + this.screen_buf.width] === 0 && this.column(cell + this.screen_buf.width) === this.column(cell) && view[cell + this.screen_buf.width] !== undefined) {
+                if (this.cost_map[cell + this.screen_buf.width] === 0 && this.column(cell + this.screen_buf.width) === this.column(cell)) {
                     this.cost_map[cell + this.screen_buf.width] = this.calc_weight(cell, cell + this.screen_buf.width);
                     this.path_map[cell + this.screen_buf.width] = cell;
                     queue.push(cell + this.screen_buf.width);
                 }
-                if (this.cost_map[cell - this.screen_buf.width] === 0 && this.column(cell - this.screen_buf.width) === this.column(cell) && view[cell - this.screen_buf.width] !== undefined) {
+                if (this.cost_map[cell - this.screen_buf.width] === 0 && this.column(cell - this.screen_buf.width) === this.column(cell)) {
                     this.cost_map[cell - this.screen_buf.width] = this.calc_weight(cell, cell - this.screen_buf.width);
                     this.path_map[cell - this.screen_buf.width] = cell;
                     queue.push(cell - this.screen_buf.width);
