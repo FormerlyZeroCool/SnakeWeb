@@ -1,5 +1,5 @@
 import { isTouchSupported, fetchImage } from './io.js';
-import { max_32_bit_signed } from './utils.js';
+import { max_32_bit_signed, sleep } from './utils.js';
 export function blendAlphaCopy(color0, color) {
     const alphant = color0.alphaNormal();
     const alphanc = color.alphaNormal();
@@ -226,6 +226,25 @@ export class Pair {
     }
 }
 ;
+export async function crop(image, x, y, width, height, image_type = "image/png", recurs_depth = 0) {
+    const canvas = document.createElement("canvas");
+    if (image && image.height && image.width) {
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(image, x, y, width, height, 0, 0, width, height);
+        const res = new Image();
+        res.src = canvas.toDataURL(image_type, 1);
+        return res;
+    }
+    else if (recurs_depth < 100) {
+        await sleep(5);
+        return await crop(image, x, y, width, height, image_type, recurs_depth + 1);
+    }
+    else {
+        throw "Exception: timeout waiting to parse image data in render";
+    }
+}
 export class ImageContainer {
     constructor(imageName, imagePath, callBack = (img) => "") {
         this.image = null;

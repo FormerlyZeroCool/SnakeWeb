@@ -1,5 +1,5 @@
 import {SingleTouchListener, isTouchSupported, KeyboardHandler, fetchImage} from './io.js'
-import { max_32_bit_signed } from './utils.js';
+import { max_32_bit_signed, sleep } from './utils.js';
 
 export function blendAlphaCopy(color0:RGB, color:RGB):void
 {
@@ -270,10 +270,33 @@ export class Pair<T,U = T> {
         this.second = second;
     }
 };
+export async function crop(image:HTMLImageElement, x:number, y:number, width:number, height:number, image_type:string = "image/png", recurs_depth:number = 0):Promise<HTMLImageElement>
+{
+    const canvas = document.createElement("canvas");
+    if(image && image.height && image.width)
+    {
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(image, x, y, width, height, 0, 0, width, height);
+        const res:HTMLImageElement = new Image();
+        res.src = canvas.toDataURL(image_type, 1);
+        return res;
+    }
+    else if(recurs_depth < 100)
+    {
+        await sleep(5);
+        return await crop(image, x, y, width, height, image_type, recurs_depth + 1);
+    }
+    else
+    {
+        throw "Exception: timeout waiting to parse image data in render";
+    }
+}
 export class ImageContainer {
     image:HTMLImageElement | HTMLCanvasElement | null;
     name:string;
-    constructor(imageName:string, imagePath:string, callBack:((image:HTMLImageElement) => void) = (img) => "")
+    constructor(imageName:string, imagePath:string | null, callBack:((image:HTMLImageElement) => void) = (img) => "")
     {
         this.image = null;
         if(imagePath && imageName)

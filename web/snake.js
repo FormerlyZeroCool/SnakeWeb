@@ -1,6 +1,6 @@
 import { SingleTouchListener, isTouchSupported, KeyboardHandler } from './io.js';
 import { getHeight, getWidth, RGB, Sprite, GuiButtonFileOpener, GuiButton, SimpleGridLayoutManager, GuiTextBox } from './gui.js';
-import { random, srand, max_32_bit_signed, DynamicInt32Array, saveBlob, FixedSizeQueue, Queue } from './utils.js';
+import { random, srand, max_32_bit_signed, DynamicInt32Array, saveBlob, FixedSizeQueue, Queue, PriorityQueue } from './utils.js';
 import { menu_font_size, SquareAABBCollidable } from './game_utils.js';
 class Snake {
     constructor(game, initial_len, head_pos) {
@@ -378,7 +378,7 @@ class Game extends SquareAABBCollidable {
         const c1y = Math.floor(cell1 / this.screen_buf.width);
         const c2x = cell2 % this.screen_buf.width;
         const c2y = Math.floor(cell2 / this.screen_buf.width);
-        //return (Math.abs(c1x - c2x) + Math.abs(c1y - c2y));
+        return (Math.abs(c1x - c2x) + Math.abs(c1y - c2y));
         return Math.sqrt(Math.pow(c1x - c2x, 2) + Math.pow(c1y - c2y, 2));
     }
     is_snake_here(cell) {
@@ -386,8 +386,8 @@ class Game extends SquareAABBCollidable {
         return view[cell] == this.snake.color.color;
     }
     calc_weight(origin, current) {
-        //const cdist = this.cell_dist(current, this.snake.head_pos);
-        return this.cost_map[origin] + (1);
+        const cdist = this.cell_dist(current, this.snake.head_pos);
+        return (cdist);
     }
     column(cell) {
         return cell % this.screen_buf.width;
@@ -437,7 +437,7 @@ class Game extends SquareAABBCollidable {
     update_map() {
         const view = new Int32Array(this.screen_buf.imageData.data.buffer);
         const heat_map = new Int32Array(this.heat_map.imageData.data.buffer);
-        const queue = new Queue();
+        const queue = new PriorityQueue((val1, val2) => this.cost_map[val1] - this.cost_map[val2]);
         this.cost_map.fill(this.background_color.color, 0, this.cost_map.length);
         this.food.forEach(food => {
             queue.push(food.index);
@@ -447,7 +447,7 @@ class Game extends SquareAABBCollidable {
         let snake_parts_found = 0;
         let head_found = false;
         let cell = 0;
-        while (queue.length > 0 && cell !== undefined) {
+        while (queue.size() > 0 && cell !== undefined) {
             cell = queue.pop();
             if (view[cell] == this.background_color.color || view[cell] == Food.color.color) {
                 if (this.cost_map[cell] > max_cost) {
@@ -479,7 +479,7 @@ class Game extends SquareAABBCollidable {
                 if (this.is_snake_here(cell)) {
                     snake_parts_found++;
                     if (this.snake.head_pos == cell) {
-                        //queue.clear();
+                        queue.clear();
                     }
                 }
             }
